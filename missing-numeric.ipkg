@@ -1,0 +1,22 @@
+package missing-numeric
+
+brief   = "Some numeric data types of Idris2"
+version = 0.6.0
+authors = "HATTORI, Hiroki <seagull.kamome@gmail.com>"
+license = "MIT"
+
+sourcedir = "src"
+depends   = base >= 0.6.0
+          , contrib >= 0.6.0
+          , elab-util >= 0.6.0
+          , sop >= 0.6.0
+          , newtype-deriving >= 0.1.1.0
+
+modules = Data.Rational
+        , Data.Fixed
+        , Data.Integral.Gcd
+        , Data.Complex
+        , Math.Transform
+        , Text.Format.Decimal
+        , Text.Format.Digits
+
