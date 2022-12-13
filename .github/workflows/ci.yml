@@ -1,0 +1,72 @@
+name: Ubuntu
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '**'
+  pull_request:
+    branches:
+      - $default-branch
+
+env:
+  SCHEME: scheme
+  IDRIS2_TESTS_CG: chez
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IDRIS2_CC: gcc
+    container: snazzybucket/idris2:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: install dependencies.
+        run: |
+          apt-get update
+          apt-get install -y gcc libgmp-dev
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+      - name: Idris version
+        run: idris2 --version
+        shell: bash
+
+      #
+      # Install dependet modules.
+      #
+      - name: checkout idris2-elab-util
+        uses: actions/checkout@v3
+        with:
+          repository: stefan-hoeck/idris2-elab-util
+          path: idris2-elab-util
+
+      - name: checkout idris2-sop
+        uses: actions/checkout@v3
+        with:
+          repository: stefan-hoeck/idris2-sop
+          path: idris2-sop
+
+      - name: checkout idris2-newtype-deriving
+        uses: actions/checkout@v3
+        with:
+          repository: MarcelineVQ/idris2-newtype-deriving
+          path: idris2-newtype-deriving
+
+
+      - name: install dependencies.
+        run: |
+          idris2 --install idris2-elab-util/elab-util.ipkg
+          idris2 --install idris2-sop/sop.ipkg
+          idris2 --install idris2-newtype-deriving/newtype-deriving.ipkg
+        shell: bash
+
+      #
+      #
+      #
+      - name: Building missing-numeric
+        run: make -C missing-numeric clean deepclean build install check
+        shell: bash
+

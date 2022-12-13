@@ -19,7 +19,7 @@ record Complex t where
 
 export
 Show t => Show (Complex t) where
-  show x = "\{show x.imag}i + \{show x.real}"
+  showPrec d x = showParens (d >= PrefixMinus) "\{show x.imag}i + \{show x.real}"
 
 export
 Functor Complex where

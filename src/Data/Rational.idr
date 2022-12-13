@@ -51,9 +51,9 @@ public export
 
 export
 Show Rational where
-  show x with (isInfinity x)
+  showPrec d x with (isInfinity x)
     _ | True = "#Infinity"
-    _ | False = "\{show x.num} %: \{show x.den}"
+    _ | False = showParens (d >= PrefixMinus && x.num < 0) "\{show x.num} %: \{show x.den}"
 
 public export
 Ord Rational where

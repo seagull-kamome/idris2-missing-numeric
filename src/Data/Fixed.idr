@@ -25,7 +25,6 @@ record Fixed (n:Nat) where
 %runElab derive "Fixed" [Generic, Eq, Ord, DecEq]
 
 
-
 export exp10 : Nat -> Integer
 exp10 n with (n)
   _ | 0  = 1

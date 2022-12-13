@@ -8,54 +8,20 @@ module Text.Format.Digits
 import Data.Nat
 import Data.Fin
 import Data.Primitives.Views
+import Data.String
 
 %default total
 
 -- --------------------------------------------------------------------------
 
 public export Digits : (base:Nat) -> Type
-Digits base = (n:Nat) -> {auto ok:n < (cast base) = True} -> Char
+Digits base = (n:Nat) -> {0 p:So (n < base)} -> Char
 
+upperHexdigit : Digits 36
+upperHexdigit n = assert_total $ strIndex "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" $ cast n
 
-upperHexdigit : Digits 16
-upperHexdigit 0 = '0'
-upperHexdigit 1 = '1'
-upperHexdigit 2 = '2'
-upperHexdigit 3 = '3'
-upperHexdigit 4 = '4'
-upperHexdigit 5 = '5'
-upperHexdigit 6 = '6'
-upperHexdigit 7 = '7'
-upperHexdigit 8 = '8'
-upperHexdigit 9 = '9'
-upperHexdigit 10 = 'A'
-upperHexdigit 11 = 'B'
-upperHexdigit 12 = 'C'
-upperHexdigit 13 = 'D'
-upperHexdigit 14 = 'E'
-upperHexdigit 15 = 'F'
-upperHexdigit _ = '_' -- why i need this?
-
-
-lowerHexdigit : Digits 16
-lowerHexdigit 0 = '0'
-lowerHexdigit 1 = '1'
-lowerHexdigit 2 = '2'
-lowerHexdigit 3 = '3'
-lowerHexdigit 4 = '4'
-lowerHexdigit 5 = '5'
-lowerHexdigit 6 = '6'
-lowerHexdigit 7 = '7'
-lowerHexdigit 8 = '8'
-lowerHexdigit 9 = '9'
-lowerHexdigit 10 = 'a'
-lowerHexdigit 11 = 'b'
-lowerHexdigit 12 = 'c'
-lowerHexdigit 13 = 'd'
-lowerHexdigit 14 = 'e'
-lowerHexdigit 15 = 'f'
-lowerHexdigit _ = '_'  -- also this
-
+lowerHexdigit : Digits 36
+lowerHexdigit n = assert_total $ strIndex "0123456789abcdefghijklmnopqrstuvwxyz" $ cast n
 
 
 intToDigits : (base:Nat)
