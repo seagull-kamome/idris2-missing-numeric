@@ -15,7 +15,6 @@ modules = Data.Rational
         , Data.Fixed
         , Data.Integral.Gcd
         , Data.Complex
-        , Math.Transform
         , Text.Format.Decimal
         , Text.Format.Digits
 
