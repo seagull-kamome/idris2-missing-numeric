@@ -25,7 +25,7 @@ lowerHexdigit n = assert_total $ strIndex "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
 intToDigits : (base:Nat)
-            -> {base':Nat} -> {auto ok:base <= base' = True} -> Digits base'
+            -> {base':Nat} -> {auto ok:So (base < base')} -> Digits base'
             -> Int -> String
 intToDigits base digits n = if n < 0 then pack $ go n [] else "0"
   where
@@ -37,7 +37,7 @@ intToDigits base digits n = if n < 0 then pack $ go n [] else "0"
     go m xs with (m `divides` base_i)
       go (_ * d + r) xs | DivBy d r prf =
         let prf' = believe_me prf
-            in go (assert_smaller n d) (digits {ok=prf'} (cast r) :: xs)
+            in go (assert_smaller n d) (digits {p=prf'} (cast r) :: xs)
 
 
 

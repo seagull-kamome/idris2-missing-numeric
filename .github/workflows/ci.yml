@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '16.x'
       - name: Idris version
         run: idris2 --version
         shell: bash
@@ -49,18 +49,10 @@ jobs:
           repository: stefan-hoeck/idris2-sop
           path: idris2-sop
 
-      - name: checkout idris2-newtype-deriving
-        uses: actions/checkout@v3
-        with:
-          repository: MarcelineVQ/idris2-newtype-deriving
-          path: idris2-newtype-deriving
-
-
       - name: install dependencies.
         run: |
           idris2 --install idris2-elab-util/elab-util.ipkg
           idris2 --install idris2-sop/sop.ipkg
-          idris2 --install idris2-newtype-deriving/newtype-deriving.ipkg
         shell: bash
 
       #

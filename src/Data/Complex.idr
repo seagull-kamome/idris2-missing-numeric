@@ -5,7 +5,7 @@
 |||
 module Data.Complex
 
-import Generics.Newtype
+import Generics.Derive
 %language ElabReflection
 
 -- --------------------------------------------------------------------------

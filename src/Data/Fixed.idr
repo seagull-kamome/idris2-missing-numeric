@@ -9,7 +9,7 @@ import Data.Nat
 import Data.Maybe
 import Data.String
 import Data.Rational
-import Generics.Newtype
+import Generics.Derive
 
 import Data.Monoid.Exponentiation
 

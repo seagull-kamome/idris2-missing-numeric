@@ -1,6 +1,6 @@
 
 PKG=missing-numeric
-DEP=-p contrib -p elab-util -p sop -p newtype-deriving
+DEP=-p contrib -p elab-util -p sop
 
 
 build:
