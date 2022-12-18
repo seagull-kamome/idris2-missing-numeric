@@ -1,0 +1,10 @@
+[custom.all.missing-numeric]
+type = "local"
+path = "."
+ipkg = "missing-numeric.ipkg"
+test = "test/test.ipkg"
+
+# [custom.all.missing-numeric-test]
+# type = "local"
+# path = "tests"
+# ipkg = "test.ipkg"
