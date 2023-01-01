@@ -25,8 +25,8 @@ record Fixed (n:Nat) where
 %runElab derive "Fixed" [Generic, Eq, Ord, DecEq]
 
 
-export exp10 : Nat -> Integer
-exp10 n with (n)
+natExp10 : Nat -> Nat
+natExp10 n with (n)
   _ | 0  = 1
   _ | 1  = 10
   _ | 2  = 100
@@ -47,10 +47,13 @@ exp10 n with (n)
   _ | 17 = 100000000000000000
   _ | 18 = 1000000000000000000
   _ | 19 = 10000000000000000000
-  _ | _ = cast $ 10 ^ n
+  _ | _ = 10 ^ n
 
-export resolution : {n:Nat} -> Fixed n -> Integer
-resolution _ = exp10 n
+0 NatExp10NotZero : {n:Nat} -> Not ((natExp10 n)=0)
+NatExp10NotZero = ?rhs_natExp10NotZero
+
+resolution : {n:Nat} -> (0 _:Fixed n) -> Nat
+resolution _ = natExp10 n
 
 
 
@@ -58,8 +61,8 @@ resolution _ = exp10 n
 export
 {n:Nat} -> Num (Fixed n) where
   x + y = MkFixed $ x.num + y.num
-  x * y = MkFixed $ (x.num * y.num) `div` (exp10 n)
-  fromInteger i = MkFixed $ i * (exp10 n)
+  x * y = MkFixed $ (x.num * y.num) `div` (cast $ natExp10 n)
+  fromInteger i = MkFixed $ i * (cast $ natExp10 n)
 
 export
 {n:Nat} -> Neg (Fixed n) where
@@ -71,9 +74,9 @@ export
 
 export
 {n:Nat} -> Fractional (Fixed n) where
-  x / y = MkFixed $ (x.num * (exp10 n)) `div` y.num
+  x / y = MkFixed $ (x.num * (cast $ natExp10 n)) `div` y.num
   recip x = let
-    res = exp10 n in MkFixed $ (res * res) `div` x.num
+    res = cast $ natExp10 n in MkFixed $ (res * res) `div` x.num
 
 
 export
@@ -82,7 +85,7 @@ export
                      else if x.num < 0 then "-" ++ go (negate x.num)
                      else go x.num where
     go : Integer -> String
-    go x = let r = exp10 n
+    go x = let r = cast $ natExp10 n
                i = x `div` r
                d' = show $ x `mod` r
             in show i ++ "." ++ replicate (fromInteger $ cast $ cast n - strLength d') '0' ++ d'
@@ -95,17 +98,17 @@ export
 
 export
 {n:Nat} -> Cast Int (Fixed n) where
-  cast i = MkFixed $ (cast i) * (exp10 n)
+  cast i = MkFixed $ (cast i) * (cast $ natExp10 n)
 export
 {n:Nat} -> Cast Integer (Fixed n) where
-  cast i = MkFixed $ i * (exp10 n)
+  cast i = MkFixed $ i * (cast $ natExp10 n)
 export
 {n:Nat} -> Cast Rational (Maybe (Fixed n)) where
   cast x = let d = x.den
-            in toMaybe (d == 0) $ MkFixed $ x.num * (exp10 n) `div` (natToInteger d)
+            in toMaybe (d == 0) $ MkFixed $ x.num * (cast $ natExp10 n) `div` (natToInteger d)
 export
 {n:Nat} -> Cast (Fixed n) Rational where
-  cast x = x.num %: (exp10 n)
+  cast x = reduce x.num (natExp10 n) {ok= ?natExp10NeverZero}
 
 
 -- --------------------------------------------------------------------------
