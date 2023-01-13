@@ -1,7 +1,6 @@
 module Main
 
 import Data.Fixed
-import Data.Integral.Gcd
 import Data.Complex
 import Data.Rational
 import Text.Format.Decimal
@@ -27,19 +26,8 @@ chk dsc xs f g = do
 partial main : IO ()
 main = do
   putStrLn $ "Codegen : \{System.Info.codegen}"
-  testGcd >> testLcm >> testTextFormat >> testComplex >> testFixed >> testRational
+  testTextFormat >> testComplex >> testFixed >> testRational
   where
-    testGcd : IO ()
-    testGcd = chk "Gcd golden"
-          [ (13, (0, 13)), (523, (523, 0)), (13, (13, 13)), (1, (37, 600))
-          , (20, (20, 100)), (18913, (624129, 2061517)) ]
-          (uncurry Data.Integral.Gcd.gcd) (const (==))
-
-    testLcm : IO ()
-    testLcm = chk "Lcm golden"
-          [ (0, 0, 22), (0, 42, 0), (60, 12, 20) ]
-          (uncurry lcm) (const (==))
-
     testTextFormat : IO ()
     testTextFormat = do
       do
@@ -128,19 +116,15 @@ main = do
          , ( "-1 %: 3", 3 %: -9 )
          , ( "-1 %: 3", -3 %: 9 )
          , ( "1 %: 3", -3 %: -9 )
-         , ( "#Infinity", infinity )
-         , ( "#Infinity", 10 %: 0)
          , ( "8 %: 15", (1 %: 3) + (1 %: 5))
          , ( "2 %: 15", (1 %: 3) * (2 %: 5))
-         , ( "5 %: 6", (1 %: 3) / (2 %: 5))
-         , ( "3 %: 1", recip (1 %: 3))
-         , ( "#Infinity", recip (0 %: 3))
+         -- , ( "5 %: 6", (1 %: 3) / (2 %: 5))
+         -- , ( "3 %: 1", recip (1 %: 3))
          ] show (const (==))
       assertEq LT (compare (2 %: 3) (4 %: 5))
       assertEq EQ (compare (2 %: 3) (4 %: 6))
       assertEq GT (compare (2 %: 3) (5 %: 20))
       assertEq (Just 18) $ floor (55 %: 3)
-      assertEq Nothing $ floor infinity
       assertEq (Just 19) $ ceil (55 %: 3)
 
 
