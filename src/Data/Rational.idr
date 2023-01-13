@@ -5,6 +5,7 @@
 ||| 
 module Data.Rational
 
+import Control.Algebra
 import Decidable.Equality
 import Data.Nat
 import Data.Nat.Factor
@@ -22,6 +23,9 @@ record Rational where
   0 denIsSucc : Not (den=0)
 
 
+public export
+NotZero : Rational -> Type
+NotZero x = Not (x.num=0)
 
 -- --------------------------------------------------------------------------
 
@@ -45,8 +49,8 @@ reduce num den@(S _) =
 
 infixr 9 %:
 
-public export
-(%:) : (num:Integer) -> (den:Integer) -> {0 ok:Not (den=0)} -> Rational
+export
+(%:) : (num:Integer) -> (den:Integer) -> {auto 0 ok:Not (den=0)} -> Rational
 (%:) num den =
   let den' = cast $ abs den in
   let num' = num * (if den < 0 then -1 else 1) in
@@ -60,36 +64,67 @@ export
 Show Rational where
   showPrec d x = showParens (d >= PrefixMinus && x.num < 0) "\{show x.num} %: \{show x.den}"
 
-public export
+export
 Eq Rational where
-  x == y = let x' = x.num * natToInteger y.den
-               y' = y.num * natToInteger x.den
+  x == y = let x' = x.num * cast y.den
+               y' = y.num * cast x.den
             in x' == y'
 
-public export
+export
 Ord Rational where
   compare x y = let x' = x.num * natToInteger y.den
                     y' = y.num * natToInteger x.den
                   in compare x' y'
 
-public export Cast Integer Rational where cast x = MkRational x 1 absurd
+export Cast Integer Rational        where cast x = MkRational x 1 absurd
 Cast ty Integer => Cast ty Rational where cast x = MkRational (cast x) 1 absurd
 
-public export
+export
 Num Rational where
   x + y = reduce (x.num * natToInteger y.den + y.num * natToInteger x.den) (x.den * y.den) {ok=bothSuccMultSucc x.denIsSucc y.denIsSucc}
   x * y = reduce (x.num * y.num) (x.den * y.den) {ok=bothSuccMultSucc x.denIsSucc y.denIsSucc}
   fromInteger x = MkRational x 1 absurd
 
-public export
+export
 Neg Rational where
   negate x = { num := negate x.num } x
   x - y = reduce (x.num * natToInteger y.den - x.num * natToInteger x.den) (x.den * y.den) {ok=bothSuccMultSucc x.denIsSucc y.denIsSucc}
 
-public export
+export
 Abs Rational where
   abs x = { num := abs x.num } x
   -- signum x = MkRational (signum x.num) 1
+
+-- --------------------------------------------------------------------------
+
+export
+[additiveRationalSemigroup] Semigroup Rational where
+  (<+>) = (+)
+
+export
+[additiveRationalSemigroupV] SemigroupV Rational using additiveRationalSemigroup where
+  semigroupOpIsAssociative l c r = ?rhs_semigroupOpIsAssociative
+
+export
+[additiveRationalMonoid]  Monoid Rational using additiveRationalSemigroup where
+  neutral = MkRational 0 1 absurd
+
+export
+[additiveRationalMonoidV] MonoidV Rational using additiveRationalMonoid additiveRationalSemigroupV where
+  monoidNeutralIsNeutralL l = ?rhs_nonoidNeutralIsNeutralL
+  monoidNeutralIsNeutralR r = ?rhs_nonoidNeutralIsNeutralR
+
+export
+[additiveRationalGroup] Group Rational using additiveRationalMonoidV where
+  inverse = negate
+  groupInverseIsInverseR r = ?rhs_groupInverseIsInerseR
+
+export
+[additiveRationalAbelianGroup] AbelianGroup Rational using additiveRationalGroup where
+  groupOpIsCommutative l r =
+    rewrite multCommutative l.den r.den
+     in ?rhs_groupOpIsCommutative
+
 
 -- --------------------------------------------------------------------------
 
