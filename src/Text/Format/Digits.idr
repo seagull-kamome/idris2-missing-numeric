@@ -1,6 +1,6 @@
 ||| Format decimal number into string.
 ||| 
-||| Copyright 2021, HATTORI, Hiroki
+||| Copyright 2021-2023, HATTORI, Hiroki
 ||| This file is released under the MIT license, see LICENSE for more detail.
 ||| 
 module Text.Format.Digits
@@ -14,76 +14,83 @@ import Data.String
 
 -- --------------------------------------------------------------------------
 
-public export Digits : (base:Nat) -> Type
-Digits base = (n:Nat) -> {0 p:So (n < base)} -> Char
+public export Digits : Nat -> Type
+Digits _ = String
 
-upperHexdigit : Digits 36
-upperHexdigit n = assert_total $ strIndex "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" $ cast n
+public export toDigit : {0 base:Nat} -> Digits base -> (n:Nat) -> {auto 0 prfNumLEBase:So (n < base)} -> Char
+toDigit digits  n = assert_total $ strIndex digits $ cast n
 
-lowerHexdigit : Digits 36
-lowerHexdigit n = assert_total $ strIndex "0123456789abcdefghijklmnopqrstuvwxyz" $ cast n
-
-
-intToDigits : (base:Nat)
-            -> {base':Nat} -> {auto ok:So (base < base')} -> Digits base'
-            -> Int -> String
-intToDigits base digits n = if n < 0 then pack $ go n [] else "0"
+public export fromDigit : {base:Nat} -> Digits base -> (ch:Char) -> Maybe Nat
+fromDigit {base=base} digits ch = go 0 $ asList digits
   where
-    base_i : Int
-    base_i = cast base
+   go : Nat -> AsList xs -> Maybe Nat
+   go n Nil = Nothing
+   go n (x::xs) =
+     if n >= base then Nothing
+        else if ch == x then Just n else go (n + 1) xs
 
-    go : Int -> List Char -> List Char
-    go 0 xs = xs
-    go m xs with (m `divides` base_i)
-      go (_ * d + r) xs | DivBy d r prf =
-        let prf' = believe_me prf
-            in go (assert_smaller n d) (digits {p=prf'} (cast r) :: xs)
+public export %inline upperAlnumDigits : {auto 0 base:Nat} -> {auto 0 _: So (base <= 36)} -> Digits base
+upperAlnumDigits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+public export %inline lowerAlnumDigits : {auto 0 base:Nat} -> {auto 0 _: So (base <= 36)} -> Digits base
+lowerAlnumDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+public export upperHexdigits : Digits 16
+upperHexdigits = upperAlnumDigits {base=16}
+
+public export lowerHexdigits : Digits 16
+lowerHexdigits = lowerAlnumDigits {base=16}
 
 
 
 -- --------------------------------------------------------------------------
 
-public export DigitNum : (base:Nat) -> Type
-DigitNum base = Char -> Maybe Int
-
-hexNum : DigitNum 16
-hexNum '0' = Just 0
-hexNum '1' = Just 1
-hexNum '2' = Just 2
-hexNum '3' = Just 3
-hexNum '4' = Just 4
-hexNum '5' = Just 5
-hexNum '6' = Just 6
-hexNum '7' = Just 7
-hexNum '8' = Just 8
-hexNum '9' = Just 9
-hexNum 'a' = Just 10
-hexNum 'A' = Just 10
-hexNum 'b' = Just 11
-hexNum 'B' = Just 11
-hexNum 'c' = Just 12
-hexNum 'C' = Just 12
-hexNum 'd' = Just 13
-hexNum 'D' = Just 13
-hexNum 'e' = Just 14
-hexNum 'E' = Just 14
-hexNum 'f' = Just 15
-hexNum 'F' = Just 15
-hexNum _ = Nothing
+||| Render Integer number into String with base.
+|||
+||| >>> intToDigits lowerHexdigits 999
+||| 3e7
+|||
+||| >>> intToDigits (upperAlnumDigits {base=8}) 11
+||| 13
+|||
+public export
+intToDigits : {base:Nat} -> Digits base -> Int -> String
+intToDigits {base=base} digits n =
+  case compare n 0 of
+    EQ => "0"
+    LT => pack ('-' :: (go (abs n) []))
+    GT => pack $ go n []
+  where
+    go : Int -> List Char -> List Char
+    go 0 xs = xs
+    go n xs with (n `divides` (cast base))
+      go (_ * d + r) xs | DivBy d r prf =
+        let prf' : So ((cast r) < base) = ?go_prf_rhs
+         in go (assert_smaller n d) (toDigit {prfNumLEBase=prf'} digits (cast r) :: xs)
 
 
-digitsToInt : (base:Nat)
-           -> {base':Nat} -> {auto ok:base <= base' = True} -> Digits base'
-           -> String -> Maybe Int
-digitsToInt base digits str = go 0 $ unpack str where
-  base_i : Int
-  base_i = cast base
+-- --------------------------------------------------------------------------
 
-  go : Int -> List Char -> Maybe Int
-  go ans [] = Just ans
-  go ans (x::xs) with (hexNum x)
-    go ans (x::xs) | Just x' = go (ans * base_i + x') xs
-    go ans (x::xs) | Nothing = Nothing
+||| Convert String to Int
+|||
+||| >>> digitsToInt upperHexdgits "1A"
+||| 26
+|||
+public export
+digitsToInt : {base:Nat} -> Digits base -> String -> Maybe Int
+digitsToInt {base=base} digits str =
+  case asList str of
+    Nil => Nothing
+    ('-'::xs) => map negate $ go 0 xs
+    xs => go 0 xs
+  where
+    base_i : Int
+    base_i = cast base
+    go : Int -> AsList _ -> Maybe Int
+    go ans Nil = Just ans
+    go ans (x::xs) with (fromDigit {base=base} digits x)
+      _ | Just x' = go (ans * base_i + cast x') xs
+      _ | Nothing = Nothing
 
 
 -- --------------------------------------------------------------------------
