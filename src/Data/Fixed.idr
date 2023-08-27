@@ -1,6 +1,6 @@
 ||| Fixed point fractional number. - Ported from Haskell base.
 |||
-||| Copyright 2021, HATTORI, Hiroki
+||| Copyright 2021-2023, HATTORI, Hiroki
 ||| This file is released under the MIT license, see LICENSE for more detail.
 |||
 module Data.Fixed
@@ -10,6 +10,8 @@ import Data.Maybe
 import Data.String
 import Data.Rational
 import Generics.Derive
+import Derive.Ord
+import Derive.Eq
 
 import Data.Monoid.Exponentiation
 
@@ -22,7 +24,7 @@ public export
 record Fixed (n:Nat) where
   constructor MkFixed
   num : Integer
-%runElab derive "Fixed" [Generic, Eq, Ord, DecEq]
+%runElab derive "Fixed" [Generic, Derive.Eq.Eq, Derive.Ord.Ord, DecEq]
 
 
 natExp10 : Nat -> Nat

@@ -1,7 +1,7 @@
 package missing-numeric
 
 brief   = "Some numeric data types of Idris2"
-version = 0.6.0
+version = 0.7
 authors = "HATTORI, Hiroki <seagull.kamome@gmail.com>"
 license = "MIT"
 
