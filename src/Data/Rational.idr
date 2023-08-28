@@ -1,6 +1,6 @@
 ||| Rational number
 ||| 
-||| Copyright 2021, HATTORI, Hiroki
+||| Copyright 2021-2023 HATTORI, Hiroki
 ||| This file is released under the MIT license, see LICENSE for more detail.
 ||| 
 module Data.Rational
