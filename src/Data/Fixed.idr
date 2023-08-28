@@ -51,7 +51,8 @@ natExp10 n with (n)
   _ | 19 = 10000000000000000000
   _ | _ = 10 ^ n
 
-0 NatExp10NotZero : {n:Nat} -> Not ((natExp10 n)=0)
+
+0 NatExp10NotZero : {n:Nat} -> NonZero (natExp10 n)
 NatExp10NotZero = ?rhs_natExp10NotZero
 
 resolution : {n:Nat} -> (0 _:Fixed n) -> Nat
@@ -110,7 +111,7 @@ export
             in toMaybe (d == 0) $ MkFixed $ x.num * (cast $ natExp10 n) `div` (natToInteger d)
 export
 {n:Nat} -> Cast (Fixed n) Rational where
-  cast x = reduce x.num (natExp10 n) {ok= ?natExp10NeverZero}
+  cast x = MkRational x.num (natExp10 n) {denIsNonZero=NatExp10NotZero {n}}
 
 
 -- --------------------------------------------------------------------------
