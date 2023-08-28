@@ -49,14 +49,14 @@ reduce (MkRational num den@(S _)) =
 
 
 
-infixr 9 %:
+infixr 9 %:, %?
 
 export (%:) : (num:Integer) -> (den:Nat) -> {auto 0 _:NonZero den} -> Rational
 (%:) num den = MkRational num den
 
 namespace Integer
-  export (%:) : (num:Integer) -> (den:Integer) -> Maybe Rational
-  (%:) num den = if den < 0 then go (negate num) (cast $ negate den) else go num (cast den)
+  export (%?) : (num:Integer) -> (den:Integer) -> Maybe Rational
+  (%?) num den = if den < 0 then go (negate num) (cast $ negate den) else go num (cast den)
     where
       go : Integer -> Nat -> Maybe Rational
       go num' den' = case den' of
@@ -67,7 +67,7 @@ namespace Integer
 -- --------------------------------------------------------------------------
 export
 Show Rational where
-  showPrec d x = showParens (d >= PrefixMinus && x.num < 0) "\{show x.num} %: \{show x.den}"
+  showPrec d x = showParens (d >= User 9 || x.num < 0) "\{show x.num} %: \{show x.den}"
 
 export Cast Integer Rational        where cast x = MkRational x 1
 -- Cast ty Integer => Cast ty Rational where cast x = MkRational (cast x) 1

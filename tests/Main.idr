@@ -1,5 +1,6 @@
 module Main
 
+import Data.Nat  -- for NonZero
 import Data.Fixed
 import Data.Complex
 import Data.Rational
@@ -111,21 +112,21 @@ main = do
     testRational : IO ()
     testRational = do
       chk "Rational"
-         [ ( "1 %: 5", 2 %: 10 )
-         , ( "1 %: 3", 3 %: 9 )
-         , ( "-1 %: 3", 3 %: -9 )
-         , ( "-1 %: 3", -3 %: 9 )
-         , ( "1 %: 3", -3 %: -9 )
-         , ( "8 %: 15", (1 %: 3) + (1 %: 5))
-         , ( "2 %: 15", (1 %: 3) * (2 %: 5))
-         -- , ( "5 %: 6", (1 %: 3) / (2 %: 5))
+         [ ( "Just (2 %: 10)", 2 %? 10 )
+         , ( "Just (1 %: 3)" , map reduce (3 %? 9) )
+         , ( "Just (-1 %: 3)", map reduce (3 %? -9) )
+         , ( "Just (-1 %: 3)", map reduce (-3 %? 9) )
+         , ( "Just (1 %: 3)" , map reduce (-3 %? -9) )
+         , ( "Just (8 %: 15)", Just ((1 %: 3) + (1 %: 5)))
+         , ( "Just (2 %: 15)", Just ((1 %: 3) * (2 %: 5)))
+         --, ( "5 %: 6", (1 %: 3) / (2 %: 5))
          -- , ( "3 %: 1", recip (1 %: 3))
          ] show (const (==))
-      assertEq LT (compare (2 %: 3) (4 %: 5))
-      assertEq EQ (compare (2 %: 3) (4 %: 6))
-      assertEq GT (compare (2 %: 3) (5 %: 20))
-      assertEq (Just 18) $ floor (55 %: 3)
-      assertEq (Just 19) $ ceil (55 %: 3)
+      assertEq LT (compareAsReal (2 %: 3) (4 %: 5))
+      assertEq EQ (compareAsReal (2 %: 3) (4 %: 6))
+      assertEq GT (compareAsReal (2 %: 3) (5 %: 20))
+      assertEq 18 $ floor (55 %: 3)
+      assertEq 19 $ ceil (55 %: 3)
 
 
 
