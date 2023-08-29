@@ -27,14 +27,15 @@ public export NonZero : Rational -> Type
 NonZero x = Not (x.num=0)
 
 -- --------------------------------------------------------------------------
+namespace Lemma
 
-public export
-0 bothSuccMultSucc : {a,b:Nat} -> NonZero a -> NonZero b -> NonZero (a*b)
-bothSuccMultSucc {a=a}{b=b} prl prr with (a*b)
-  _ | Z = case zeroMultEitherZero a b of
-            Left _ impossible
-            Right _ impossible
-  _ | S _ = SIsNonZero
+  public export
+  0 bothSuccMultSucc : {a,b:Nat} -> NonZero a -> NonZero b -> NonZero (a*b)
+  bothSuccMultSucc {a=a}{b=b} prl prr with (a*b)
+    _ | Z = case zeroMultEitherZero a b of
+              Left _ impossible
+              Right _ impossible
+    _ | S _ = SIsNonZero
 
 
 -- --------------------------------------------------------------------------
@@ -73,7 +74,7 @@ export Cast Integer Rational        where cast x = MkRational x 1
 -- Cast ty Integer => Cast ty Rational where cast x = MkRational (cast x) 1
 
 -- --------------------------------------------------------------------------
-export
+public export
 Eq Rational where
   (MkRational lnum lden) == (MkRational rnum rden) = lnum == rnum && lden == rden
 
@@ -97,10 +98,32 @@ Neg Rational where
   l - r = MkRational (l.num * natToInteger r.den - r.num * natToInteger l.den) (l.den * r.den)
                      {denIsNonZero=bothSuccMultSucc l.denIsNonZero r.denIsNonZero}
 
-export
+public export
 Abs Rational where
   abs (MkRational num den) = MkRational (abs num) den
   -- signum x = MkRational (signum x.num) 1
+
+-- --------------------------------------------------------------------------
+namespace SimpleOpr
+  namespace Nat
+    public export %inline mult : Rational -> Nat -> Rational
+    mult (MkRational num den)  n = MkRational (num * cast n) den
+
+    public export %inline div : Rational -> (n:Nat) -> {auto 0 nIsNonZero:NonZero n} -> Rational
+    div (MkRational num den {denIsNonZero}) n =
+      let 0 prf : NonZero (den * n) = bothSuccMultSucc denIsNonZero nIsNonZero
+       in MkRational num (den * n)
+
+
+  namespace Integer
+    public export %inline mult : Rational -> Integer -> Rational
+    mult (MkRational num den) n = MkRational (num * n) den
+
+    public export partial %inline div : Rational -> Integer -> Maybe Rational
+    div x n with (the Nat $ fromInteger n)
+      _ | Z = Nothing
+      _ | n'@(S _) = Just $ div x n'
+
 
 -- --------------------------------------------------------------------------
 
