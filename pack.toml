@@ -4,7 +4,7 @@ path = "."
 ipkg = "missing-numeric.ipkg"
 test = "test/test.ipkg"
 
-# [custom.all.missing-numeric-test]
-# type = "local"
-# path = "tests"
-# ipkg = "test.ipkg"
+[custom.all.missing-numeric-test]
+type = "local"
+path = "test"
+ipkg = "test.ipkg"
