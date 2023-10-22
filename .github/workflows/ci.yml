@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IDRIS2_CC: gcc
-    # container: snazzybucket/idris2:latest
-    container: stefan-hoeck/idris2-pack
+    container: ghcr.io/stefan-hoeck/idris2-pack:latest    
     steps:
       - name: Checkout
         uses: actions/checkout@v3
