@@ -17,7 +17,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      IDRIS2_CC: gcc
+      IDRIS2_CC: clang
+      PACK_DIR: /root/.pack
     container: ghcr.io/stefan-hoeck/idris2-pack:latest    
     steps:
       - name: Checkout
@@ -32,7 +33,8 @@ jobs:
       - run: pack install-deps
       - run: pack build missing-numeric
       - run: IDRIS2_CG=chez pack test  missing-numeric
-      - run: IDRIS2_CG=refc pack test  missing-numeric
+      - run: IDRIS2_CG=refc IDRIS2_CC=gcc pack test  missing-numeric
+      - run: IDRIS2_CG=refc IDRIS2_CC=clang pack test  missing-numeric
       - run: IDRIS2_CG=node pack test  missing-numeric
       - run: pack install missing-numeric
 
