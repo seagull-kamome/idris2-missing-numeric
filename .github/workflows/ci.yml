@@ -30,7 +30,7 @@ jobs:
           node-version: '16.x'
 
       - run: idris2 --version
-      - run: pack install-deps
+      - run: pack install-deps missing-numeric
       - run: pack build missing-numeric
       - run: IDRIS2_CG=chez pack test  missing-numeric
       - run: IDRIS2_CG=refc IDRIS2_CC=gcc pack test  missing-numeric
