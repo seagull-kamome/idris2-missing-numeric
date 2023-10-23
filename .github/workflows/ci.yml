@@ -21,13 +21,16 @@ jobs:
       PACK_DIR: /root/.pack
     container: ghcr.io/stefan-hoeck/idris2-pack:latest    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
+      - name: Setup dependencies
+        run: |
+          sudo apt-get -y install gcc clang
+
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - run: idris2 --version
       - run: pack install-deps
