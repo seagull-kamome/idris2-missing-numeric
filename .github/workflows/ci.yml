@@ -11,7 +11,7 @@ on:
 
 env:
   SCHEME: scheme
-  IDRIS2_TESTS_CG: chez
+  IDRIS2_CFLAGS: -O2
 
 jobs:
   build:
@@ -27,7 +27,8 @@ jobs:
           node-version: '16.x'
       - name: Setup dependencies
         run: |
-          sudo apt-get -y install gcc clang
+          apt-get update
+          apt-get -y install gcc clang-14
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -37,7 +38,7 @@ jobs:
       - run: pack build missing-numeric
       - run: IDRIS2_CG=chez pack test  missing-numeric
       - run: IDRIS2_CG=refc IDRIS2_CC=gcc pack test  missing-numeric
-      - run: IDRIS2_CG=refc IDRIS2_CC=clang pack test  missing-numeric
+      - run: IDRIS2_CG=refc IDRIS2_CC=clang-14 pack test  missing-numeric
       - run: IDRIS2_CG=node pack test  missing-numeric
       - run: pack install missing-numeric
 
