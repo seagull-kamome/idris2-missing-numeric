@@ -5,9 +5,11 @@ version = 0.7.0
 authors = "HATTORI, Hiroki <seagull.kamome@gmail.com>"
 license = "MIT"
 
+langversion >= 0.5.1
+
 sourcedir = "src"
-depends   = base >= 0.6.0
-          , contrib >= 0.6.0
+depends   = base
+          , contrib
           , elab-util >= 0.6.0
           , sop >= 0.6.0
 
