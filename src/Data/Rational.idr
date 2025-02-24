@@ -5,7 +5,7 @@
 ||| 
 module Data.Rational
 
-import Control.Algebra
+-- import Control.Algebra
 import Decidable.Equality
 import Data.Nat
 import Data.Nat.Factor
@@ -50,7 +50,7 @@ reduce (MkRational num den@(S _)) =
 
 
 
-infixr 9 %:, %?
+export infixr 9 %:, %?
 
 export (%:) : (num:Integer) -> (den:Nat) -> {auto 0 _:NonZero den} -> Rational
 (%:) num den = MkRational num den
@@ -131,29 +131,29 @@ export
 [additiveRationalSemigroup] Semigroup Rational where
   (<+>) = (+)
 
-export
-[additiveRationalSemigroupV] SemigroupV Rational using additiveRationalSemigroup where
-  semigroupOpIsAssociative l c r = ?rhs_semigroupOpIsAssociative
+-- export
+-- [additiveRationalSemigroupV] SemigroupV Rational using additiveRationalSemigroup where
+--   semigroupOpIsAssociative l c r = ?rhs_semigroupOpIsAssociative
 
 export
 [additiveRationalMonoid]  Monoid Rational using additiveRationalSemigroup where
   neutral = MkRational 0 1
 
-export
-[additiveRationalMonoidV] MonoidV Rational using additiveRationalMonoid additiveRationalSemigroupV where
-  monoidNeutralIsNeutralL l = ?rhs_nonoidNeutralIsNeutralL
-  monoidNeutralIsNeutralR r = ?rhs_nonoidNeutralIsNeutralR
+-- export
+-- [additiveRationalMonoidV] MonoidV Rational using additiveRationalMonoid additiveRationalSemigroupV where
+--   monoidNeutralIsNeutralL l = ?rhs_nonoidNeutralIsNeutralL
+--   monoidNeutralIsNeutralR r = ?rhs_nonoidNeutralIsNeutralR
 
-export
-[additiveRationalGroup] Group Rational using additiveRationalMonoidV where
-  inverse = negate
-  groupInverseIsInverseR r = ?rhs_groupInverseIsInerseR
+-- export
+-- [additiveRationalGroup] Group Rational using additiveRationalMonoidV where
+--   inverse = negate
+--   groupInverseIsInverseR r = ?rhs_groupInverseIsInerseR
 
-export
-[additiveRationalAbelianGroup] AbelianGroup Rational using additiveRationalGroup where
-  groupOpIsCommutative l r =
-    rewrite multCommutative l.den r.den
-     in ?rhs_groupOpIsCommutative
+-- export
+-- [additiveRationalAbelianGroup] AbelianGroup Rational using additiveRationalGroup where
+--   groupOpIsCommutative l r =
+--     rewrite multCommutative l.den r.den
+--      in ?rhs_groupOpIsCommutative
 
 
 -- --------------------------------------------------------------------------
