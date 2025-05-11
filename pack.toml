@@ -1,3 +1,8 @@
+#[idris2]
+#url = "/home/seagull/Projects/Idris2"
+#commi = "latest:refs/heads/localmain"
+#bootstrap = true
+
 [custom.all.missing-numeric]
 type = "local"
 path = "."
@@ -8,3 +13,5 @@ test = "test/test.ipkg"
 type = "local"
 path = "test"
 ipkg = "test.ipkg"
+
+
