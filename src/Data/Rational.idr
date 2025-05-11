@@ -20,22 +20,16 @@ record Rational where
   constructor MkRational
   num : Integer
   den : Nat
-  {auto 0 denIsNonZero : NonZero den}
+  {auto 0 denIsNonZero : IsSucc den}
 
 
 public export NonZero : Rational -> Type
 NonZero x = Not (x.num=0)
 
 -- --------------------------------------------------------------------------
-namespace Lemma
 
-  public export
-  0 bothSuccMultSucc : {a,b:Nat} -> NonZero a -> NonZero b -> NonZero (a*b)
-  bothSuccMultSucc {a=a}{b=b} prl prr with (a*b)
-    _ | Z = case zeroMultEitherZero a b of
-              Left _ impossible
-              Right _ impossible
-    _ | S _ = SIsNonZero
+multSuccSucc:{n,m:Nat} -> IsSucc n -> IsSucc m -> IsSucc (n * m)
+multSuccSucc {n=S n'} {m=S m'} ItIsSucc ItIsSucc = ItIsSucc
 
 
 -- --------------------------------------------------------------------------
@@ -87,16 +81,16 @@ export
 Num Rational where
   l + r = MkRational (l.num * natToInteger r.den + r.num * natToInteger l.den)
                      (l.den * r.den)
-                     {denIsNonZero=bothSuccMultSucc l.denIsNonZero r.denIsNonZero}
+                     {denIsNonZero=multSuccSucc l.denIsNonZero r.denIsNonZero}
   l * r = MkRational (l.num * r.num) (l.den * r.den)
-                     {denIsNonZero=bothSuccMultSucc l.denIsNonZero r.denIsNonZero}
+                     {denIsNonZero=multSuccSucc l.denIsNonZero r.denIsNonZero}
   fromInteger x = MkRational x 1
 
 export
 Neg Rational where
   negate (MkRational num den) = MkRational (negate num) den
   l - r = MkRational (l.num * natToInteger r.den - r.num * natToInteger l.den) (l.den * r.den)
-                     {denIsNonZero=bothSuccMultSucc l.denIsNonZero r.denIsNonZero}
+                     {denIsNonZero=multSuccSucc l.denIsNonZero r.denIsNonZero}
 
 public export
 Abs Rational where
@@ -111,7 +105,7 @@ namespace SimpleOpr
 
     public export %inline div : Rational -> (n:Nat) -> {auto 0 nIsNonZero:NonZero n} -> Rational
     div (MkRational num den {denIsNonZero}) n =
-      let 0 prf : NonZero (den * n) = bothSuccMultSucc denIsNonZero nIsNonZero
+      let 0 prf : NonZero (den * n) = multSuccSucc denIsNonZero nIsNonZero
        in MkRational num (den * n)
 
 
