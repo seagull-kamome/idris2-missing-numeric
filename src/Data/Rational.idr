@@ -5,7 +5,6 @@
 ||| 
 module Data.Rational
 
--- import Control.Algebra
 import Decidable.Equality
 import Data.Nat
 import Data.Nat.Factor
@@ -29,7 +28,7 @@ NonZero x = Not (x.num=0)
 -- --------------------------------------------------------------------------
 
 multSuccSucc:{n,m:Nat} -> IsSucc n -> IsSucc m -> IsSucc (n * m)
-multSuccSucc {n=S n'} {m=S m'} ItIsSucc ItIsSucc = ItIsSucc
+multSuccSucc {n=S n'} {m=S m'} _ _ = ItIsSucc
 
 
 -- --------------------------------------------------------------------------
