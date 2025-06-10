@@ -1,5 +1,6 @@
 name: AnyCommit
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'
