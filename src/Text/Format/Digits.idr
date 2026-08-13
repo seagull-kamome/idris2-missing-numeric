@@ -58,15 +58,29 @@ intToDigits : {base:Nat} -> Digits base -> Int -> String
 intToDigits {base=base} digits n =
   case compare n 0 of
     EQ => "0"
-    LT => pack ('-' :: (go (abs n) []))
-    GT => pack $ go n []
+    LT => pack ('-' :: (go bi (abs n) []))
+    GT => pack $ go bi n []
   where
-    go : Int -> List Char -> List Char
-    go 0 xs = xs
-    go n xs with (n `divides` (cast base))
-      go (_ * d + r) xs | DivBy d r prf =
+    -- Bound once as a plain local variable rather than inlining `cast
+    -- base` at each use: `with`/`case` on `n \`divides\` d` can only
+    -- refine `d` to the literal `0` in the `DivByZero` branch when `d`
+    -- is itself a pattern variable -- unifying an opaque application
+    -- like `cast base` against `0` is something the elaborator can't
+    -- solve, since `base` is abstract (it genuinely could be `Z`, this
+    -- isn't a workaround for a solvable-but-awkward goal).
+    bi : Int
+    bi = cast base
+
+    go : Int -> Int -> List Char -> List Char
+    go d 0 xs = xs
+    go d n xs with (n `divides` d)
+      go d (_ * dv + r) xs | DivBy dv r prf =
         let prf' : So ((cast r) < base) = ?go_prf_rhs
-         in go (assert_smaller n d) (toDigit {prfNumLEBase=prf'} digits (cast r) :: xs)
+         in go d (assert_smaller n dv) (toDigit {prfNumLEBase=prf'} digits (cast r) :: xs)
+      -- `base = 0`: `Digits 0` has no digit characters to index into
+      -- anyway, so nothing more can be rendered -- stop here rather
+      -- than claim a digit that doesn't exist.
+      go 0 n xs | DivByZero = xs
 
 
 -- --------------------------------------------------------------------------
