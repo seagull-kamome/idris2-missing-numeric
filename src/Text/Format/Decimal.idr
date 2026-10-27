@@ -73,7 +73,7 @@ formatFixed {n=n} fmt (MkFixed x') with (n)
   formatFixed {n=n} fmt (MkFixed x') | 0 = formatIntegral fmt x'
   formatFixed {n=n} fmt (MkFixed x') | _ = let
     (x, sign) = if x' < 0 then (negate x', fmt.minus) else (x', fmt.plus)
-    r = cast $ power 10 n
+    r = pow10 n
     dec = show $ x `div` r
     frc' = show $ x `mod` r
     frc = replicate (fromInteger $ cast $ cast n - strLength frc') '0' ++ frc'
