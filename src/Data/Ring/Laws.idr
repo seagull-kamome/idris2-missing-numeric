@@ -13,10 +13,10 @@ module Data.Ring.Laws
 
 %default total
 
-||| `Num t` and `Neg t` make a commutative ring (`fromInteger 0` and
+||| `Neg t` (which includes `Num t`) makes a commutative ring (`fromInteger 0` and
 ||| `fromInteger 1` are the neutral elements).
 public export
-interface (Num t, Neg t) => CommRingLaws t where
+interface Neg t => CommRingLaws t where
   addComm : (a, b : t) -> a + b === b + a
   addAssoc : (a, b, c : t) -> (a + b) + c === a + (b + c)
   addZero : (a : t) -> a + fromInteger 0 === a
@@ -145,6 +145,11 @@ export
 negMul : CommRingLaws t => (a, b : t) -> negate a * b === negate (a * b)
 negMul a b =
   trans (mulComm (negate a) b) (trans (mulNeg b a) (cong negate (mulComm b a)))
+
+||| `negate 0 = 0`
+export
+negZero : (t : Type) -> CommRingLaws t => negate (the t (fromInteger 0)) === the t (fromInteger 0)
+negZero t = trans (sym (addZeroL (negate (the t (fromInteger 0))))) (addNeg (the t (fromInteger 0)))
 
 ||| `negate (negate a) = a`
 export

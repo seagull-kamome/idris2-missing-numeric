@@ -101,6 +101,67 @@ main = do
           [ (True, (MkComplex 0 1, MkComplex 0 1))
           , (False, (MkComplex 1 1, MkComplex 0 1)) ]
           (uncurry (==)) (const (==))
+      -- over Integer: ring operations, the conjugate, the square of the magnitude
+      chk "Complex Integer"
+          [ ("3 + 7i", show (the (Complex Integer) (MkComplex 1 2 + MkComplex 2 5)))
+          , ("-5 + 10i", show (the (Complex Integer) (MkComplex 1 2 * MkComplex 3 4)))
+          , ("-1 + -1i", show (the (Complex Integer) (MkComplex 1 2 - MkComplex 2 3)))
+          , ("-2 + -3i", show (the (Complex Integer) (negate (MkComplex 2 3))))
+          , ("2 + -3i", show (conjugate (the (Complex Integer) (MkComplex 2 3))))
+          , ("13", show (normSq (the (Complex Integer) (MkComplex 2 3))))
+          , ("-1 + 0i", show (i * the (Complex Integer) i))
+          , ("7 + 0i", show (the (Complex Integer) 7))
+          , ("4 + 0i", show (the (Complex Integer) (fromReal 4)))
+          , ("-5 + 12i", show (pow (the (Complex Integer) (MkComplex 2 3)) 2))
+          , ("-46 + 9i", show (pow (the (Complex Integer) (MkComplex 2 3)) 3))
+          , ("1 + 0i", show (pow (the (Complex Integer) (MkComplex 2 3)) 0))
+          , ("65 + 0i", show (mulC (MkComplex 2 3 + MkComplex 0 0) (conjugate (MkComplex 2 3)) * MkComplex 5 0))
+          ] id (const (==))
+      chk "Complex isReal, isImaginary"
+          [ (True, isReal (the (Complex Integer) (MkComplex 4 0))), (False, isReal (the (Complex Integer) (MkComplex 4 1)))
+          , (True, isImaginary (the (Complex Integer) (MkComplex 0 1))), (True, isImage (the (Complex Integer) (MkComplex 0 9))) ]
+          id (const (==))
+      -- the laws, tried on values: the proofs hold for every ring; here one of them against the arithmetic
+      let zs = [ MkComplex a b | a <- the (List Integer) [-2 .. 2], b <- [-2 .. 2] ]
+      chk "Complex laws on values"
+          [ (True, all (\(x, y) => x + y == y + x) [ (x, y) | x <- zs, y <- zs ])
+          , (True, all (\(x, y) => x * y == y * x) [ (x, y) | x <- zs, y <- zs ])
+          , (True, all (\(x, y, z) => (x * y) * z == x * (y * z)) [ (x, y, z) | x <- take 9 zs, y <- take 9 (drop 8 zs), z <- take 9 (drop 16 zs) ])
+          , (True, all (\(x, y, z) => x * (y + z) == x * y + x * z) [ (x, y, z) | x <- take 9 zs, y <- take 9 (drop 8 zs), z <- take 9 (drop 16 zs) ])
+          , (True, all (\(x, y) => normSq (x * y) == normSq x * normSq y) [ (x, y) | x <- zs, y <- zs ])
+          , (True, all (\(x, y) => conjugate (x * y) == conjugate x * conjugate y) [ (x, y) | x <- zs, y <- zs ])
+          , (True, all (\x => x * conjugate x == MkComplex (normSq x) 0) zs) ]
+          id (const (==))
+      -- division over a type with division: Fixed
+      chk "Complex over Fixed"
+          [ ("0.4400 + 0.0800i", show (the (Complex (Fixed 4)) (MkComplex 1 2) / MkComplex 3 4))
+          , ("0.2000 + -0.4000i", show (recip (the (Complex (Fixed 4)) (MkComplex 1 2))))
+          , ("1.0000 + 0.0000i", show (the (Complex (Fixed 4)) (MkComplex 1 2) / MkComplex 1 2))
+          , ("0.2000 + -0.4000i", show (the (Complex (Fixed 4)) (MkComplex 1 2) ^^ (-1))) ]
+          id (const (==))
+      -- Double: magnitude, angle, polar form and what depends on them
+      let near : Double -> Double -> Bool
+          near a b = abs (a - b) < 1.0e-9
+          nearC : Complex Double -> Complex Double -> Bool
+          nearC a b = near a.real b.real && near a.imag b.imag
+      chk "Complex Double"
+          [ (True, near (magnitude (MkComplex 3 4)) 5), (True, near (phase (MkComplex 1 1)) (pi / 4))
+          , (True, near (phase (MkComplex (-1) 0)) pi), (True, near (phase (MkComplex 0 (-1))) (negate pi / 2))
+          , (True, near (phase (MkComplex 0 0)) 0), (True, near (phase (MkComplex (-1) (-1))) (negate (3 * pi / 4)))
+          , (True, nearC (mkPolar 2 (pi / 2)) (MkComplex 0 2)), (True, nearC (cis pi) (MkComplex (-1) 0))
+          , (True, let (r, t) = polar (MkComplex (-3) 4) in nearC (mkPolar r t) (MkComplex (-3) 4))
+          , (True, nearC (cexp (MkComplex 0 pi)) (MkComplex (-1) 0))
+          , (True, nearC (cexp (MkComplex 1 0)) (MkComplex euler 0))
+          , (True, nearC (clog (MkComplex (-1) 0)) (MkComplex 0 pi))
+          , (True, nearC (cexp (clog (MkComplex 3 4))) (MkComplex 3 4))
+          , (True, nearC (csqrt (MkComplex (-4) 0)) (MkComplex 0 2))
+          , (True, nearC (csqrt (MkComplex 3 4)) (MkComplex 2 1))
+          , (True, nearC (mulC (csqrt (MkComplex 5 12)) (csqrt (MkComplex 5 12))) (MkComplex 5 12))
+          , (True, nearC (cpow (MkComplex 0 1) (MkComplex 2 0)) (MkComplex (-1) 0))
+          , (True, nearC (MkComplex 1 2 / MkComplex 3 4) (MkComplex 0.44 0.08))
+          , (True, nearC (pow (MkComplex 1 1) 8) (MkComplex 16 0))
+          , (True, nearC (MkComplex 1 1 ^^ (-2)) (MkComplex 0 (-0.5))) ]
+          id (const (==))
 
     testFixed : IO ()
     testFixed = do
