@@ -2,6 +2,7 @@ module Main
 
 import Data.Nat  -- for NonZero
 import Data.List
+import Data.Maybe
 import Data.Fixed
 import Data.Pow
 import Data.Complex
@@ -13,6 +14,9 @@ assertEq : Show a => Eq a => a -> a -> IO ()
 assertEq x y with (x == y)
   _ | True  = putStr "✓"
   _ | False = putStrLn ("\n  ✗ expected=" ++ show x ++ " actual=" ++ show y)
+
+implies' : Bool -> Bool -> Bool
+implies' p q = not p || q
 
 chk : (Show a, Show b) => String -> List (a, b) -> (b -> a) -> (b -> a -> a -> Bool) -> IO ()
 chk dsc xs f g = do
@@ -172,3 +176,70 @@ main = do
 
 
 
+      -- Eq and Ord compare the numbers, not the representations
+      chk "Rational Eq/Ord"
+         [ (True, (1 %: 2) == (2 %: 4)), (False, (1 %: 2) == (1 %: 3)), (True, (-1 %: 2) == (-2 %: 4))
+         , (True, (1 %: 3) < (1 %: 2)), (True, (-1 %: 2) < (-1 %: 3)), (False, (2 %: 4) < (1 %: 2)), (True, (2 %: 4) <= (1 %: 2))
+         , (True, max (1 %: 3) (1 %: 2) == (1 %: 2)), (True, compare (2 %: 3) (4 %: 6) == EQ) ]
+         id (const (==))
+      -- the reciprocal keeps the sign; division; powers
+      chk "Rational recip, division, powers"
+         [ ("Just (3 %: 1)", show (recipMaybe (1 %: 3)))
+         , ("Just (-4 %: 3)", show (recipMaybe (-3 %: 4)))
+         , ("Nothing", show (recipMaybe (0 %: 5)))
+         , ("Just (5 %: 6)", show ((1 %: 3) /? (2 %: 5)))
+         , ("Nothing", show ((1 %: 3) /? (0 %: 1)))
+         , ("1 %: 8", show (pow (1 %: 2) 3))
+         , ("1 %: 1", show (pow (7 %: 3) 0))
+         , ("Just (1 %: 8)", show (powInteger (1 %: 2) 3))
+         , ("Just (8 %: 1)", show (powInteger (1 %: 2) (-3)))
+         , ("Just (9 %: 4)", show (powInteger (-2 %: 3) (-2)))
+         , ("Nothing", show (powInteger (0 %: 1) (-1)))
+         , ("Just (1 %: 1)", show (powInteger (0 %: 1) 0)) ]
+         id (const (==))
+      -- floor, ceil, truncate, round (half to even), the integer part and the fraction
+      chk "Rational whole part"
+         [ ((2, 3, 2, 2), (floor (5 %: 2), ceil (5 %: 2), truncate (5 %: 2), round (5 %: 2)))
+         , ((-3, -2, -2, -2), (floor (-5 %: 2), ceil (-5 %: 2), truncate (-5 %: 2), round (-5 %: 2)))
+         , ((3, 4, 3, 4), (floor (7 %: 2), ceil (7 %: 2), truncate (7 %: 2), round (7 %: 2)))
+         , ((0, 1, 0, 0), (floor (1 %: 3), ceil (1 %: 3), truncate (1 %: 3), round (1 %: 3)))
+         , ((0, 1, 0, 1), (floor (2 %: 3), ceil (2 %: 3), truncate (2 %: 3), round (2 %: 3)))
+         , ((-1, 0, 0, 0), (floor (-1 %: 3), ceil (-1 %: 3), truncate (-1 %: 3), round (-1 %: 3)))
+         , ((4, 4, 4, 4), (floor (8 %: 2), ceil (8 %: 2), truncate (8 %: 2), round (8 %: 2))) ]
+         id (const (==))
+      chk "Rational properFraction"
+         [ ("(2, 1 %: 2)", show (properFraction (5 %: 2)))
+         , ("(-2, (-1 %: 2))", show (properFraction (-5 %: 2)))
+         , ("1 %: 2", show (fract (5 %: 2)))
+         , ("0 %: 2", show (fract (4 %: 2))) ]
+         id (const (==))
+      chk "Rational reduced parts"
+         [ ((1, 3), (numerator (2 %: 6), denominator (2 %: 6))), ((-1, 2), (numerator (-3 %: 6), denominator (-3 %: 6))) ]
+         id (const (==))
+      chk "Rational isInteger and signum"
+         [ ((True, False, -1, 0, 1), (isInteger (6 %: 3), isInteger (5 %: 3), signum (-2 %: 3), signum (0 %: 3), signum (2 %: 3))) ]
+         id (const (==))
+      chk "Rational casts"
+         [ ("3 %: 1", show (the Rational (cast (the Nat 3)))), ("(-4 %: 1)", show (the Rational (cast (the Int (-4)))))
+         ]
+         id (const (==))
+      chk "Rational to Double"
+         [ (True, the Double (cast (3 %: 4)) == 0.75), (True, the Double (cast (-1 %: 2)) == -0.5), (True, the Double (cast (6 %: 8)) == 0.75) ]
+         id (const (==))
+      -- the laws of Integer that Data.Integer.Laws believes, tried on a range of values
+      let range = the (List Integer) [-6 .. 6]
+      let nz = filter (/= 0) range
+      let laws =
+            [ ("a + b = b + a", \a, b, c => a + b == b + a), ("(a + b) + c = a + (b + c)", \a, b, c => (a + b) + c == a + (b + c))
+            , ("a + 0 = a", \a, b, c => a + 0 == a), ("a + negate a = 0", \a, b, c => a + negate a == 0)
+            , ("a - b = a + negate b", \a, b, c => a - b == a + negate b), ("a * b = b * a", \a, b, c => a * b == b * a)
+            , ("(a * b) * c = a * (b * c)", \a, b, c => (a * b) * c == a * (b * c)), ("a * 1 = a", \a, b, c => a * 1 == a)
+            , ("a * (b + c) = a * b + a * c", \a, b, c => a * (b + c) == a * b + a * c)
+            , ("natToInteger of a product", \a, b, c => natToInteger (integerToNat (abs a) * integerToNat (abs b)) == abs a * abs b)
+            , ("natToInteger (integerToNat (abs a)) = abs a", \a, b, c => natToInteger (integerToNat (abs a)) == abs a)
+            , ("abs a = a if not a < 0", \a, b, c => not (a < 0) `implies'` (abs a == a))
+            , ("abs a = negate a if a < 0", \a, b, c => (a < 0) `implies'` (abs a == negate a))
+            , ("a * c = b * c, c /= 0, then a = b", \a, b, c => (c /= 0 && a * c == b * c) `implies'` (a == b)) ]
+      for_ laws $ \(name, law) => do
+        let ok = all (\a => all (\b => all (\c => law a b c) range) range) range
+        putStrLn ("Integer law " ++ name ++ ": " ++ (if ok then "✓" else "✗ failed"))

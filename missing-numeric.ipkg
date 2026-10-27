@@ -14,7 +14,10 @@ depends   = base
           , sop >= 0.6.0
 
 modules = Data.Pow
+        , Data.Ring.Laws
+        , Data.Integer.Laws
         , Data.Rational
+        , Data.Rational.Laws
         , Data.Fixed
         , Data.Complex
         , Text.Format.Decimal
