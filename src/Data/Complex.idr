@@ -17,6 +17,7 @@ import Data.Pow
 import Generics.Derive
 import Derive.Eq
 %language ElabReflection
+%default total
 
 -- --------------------------------------------------------------------------
 
@@ -104,8 +105,8 @@ fromReal r = MkComplex r (fromInteger 0)
 
 ||| The imaginary unit.
 export
-i : Num t => Complex t
-i = MkComplex (fromInteger 0) (fromInteger 1)
+imaginaryUnit : Num t => Complex t
+imaginaryUnit = MkComplex (fromInteger 0) (fromInteger 1)
 
 export
 isReal : (Num t, Eq t) => Complex t -> Bool
@@ -140,12 +141,18 @@ atan2 y x =
   else if y < 0 then negate pi / 2
   else 0
 
-||| The distance from zero.
+||| The distance from zero. The parts are scaled by the larger first, so a number
+||| with a large part does not overflow (`normSq` would).
 export
 magnitude : Complex Double -> Double
-magnitude x = sqrt (normSq x)
+magnitude x =
+  let m = max (abs x.real) (abs x.imag)
+   in if m == 0 || m - m /= 0 then m
+      else m * sqrt ((x.real / m) * (x.real / m) + (x.imag / m) * (x.imag / m))
 
-||| The angle with the real axis, in (-pi, pi]; zero for zero.
+||| The angle with the real axis, in (-pi, pi]; zero for zero. A negative zero
+||| imaginary part is taken as a positive one, so the branch cut is on its
+||| upper side (`phase (-1 - 0i)` is `pi`).
 export
 phase : Complex Double -> Double
 phase x = atan2 x.imag x.real

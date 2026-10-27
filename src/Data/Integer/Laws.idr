@@ -5,7 +5,8 @@
 ||| and taken as true by `believe_me` (the way `Data.Int.Order` of contrib treats
 ||| `Int`); each is a plain fact about integers, and `test/Main.idr` checks all of
 ||| them on a range of values. Everything else in this package that is proven
-||| rests on these and on nothing unsafe.
+||| rests on these and on `pow10NonZero` of `Data.Fixed.Laws` (the other place
+||| with `believe_me`), and on nothing unsafe.
 |||
 ||| Copyright 2021-2026 HATTORI, Hiroki
 ||| This file is released under the MIT license, see LICENSE for more detail.
@@ -62,3 +63,19 @@ absNonNegative _ _ = unsafeEq
 export
 absNegative : (a : Integer) -> (a < 0) === True -> abs a === negate a
 absNegative _ _ = unsafeEq
+
+||| A product divided by one of its factors, which is not zero, is the other.
+export
+divMulCancel : (a, r : Integer) -> Not (r === 0) -> (a * r) `div` r === a
+divMulCancel _ _ _ = unsafeEq
+
+||| Zero divided by a number that is not zero is zero.
+export
+zeroDiv : (r : Integer) -> Not (r === 0) -> 0 `div` r === 0
+zeroDiv _ _ = unsafeEq
+
+||| The absolute value of a number that is not zero is a successor once it is a
+||| `Nat`: it is not zero.
+export
+absNatSucc : (a : Integer) -> Not (a === 0) -> (k : Nat ** integerToNat (abs a) === S k)
+absNatSucc a _ = (pred (integerToNat (abs a)) ** unsafeEq)

@@ -19,6 +19,7 @@ modules = Data.Pow
         , Data.Rational
         , Data.Rational.Laws
         , Data.Fixed
+        , Data.Fixed.Laws
         , Data.Complex
         , Data.Complex.Laws
         , Text.Format.Decimal

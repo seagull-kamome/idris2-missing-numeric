@@ -30,7 +30,7 @@ record Fixed (n:Nat) where
 -- 10 to the power n as an Integer, which is what the arithmetic needs: a table
 -- for the number of digits a Fixed usually has, and squaring for the rest.
 -- (The operations ask for it every time they run.)
-export
+public export
 pow10 : Nat -> Integer
 pow10 n = case n of
   0 => 1
@@ -89,31 +89,66 @@ natExp10IsSucc (S k) = plusIsSucc {a = natExp10 k} {b = mult 9 (natExp10 k)} (na
 0 NatExp10NotZero : {n:Nat} -> NonZero (natExp10 n)
 NatExp10NotZero = natExp10IsSucc n
 
-resolution : {n:Nat} -> (0 _:Fixed n) -> Nat
-resolution _ = natExp10 n
+||| The value of 1 in the numerator: 10 to the number of digits (Haskell's
+||| `resolution`).
+export
+resolution : {n:Nat} -> (0 _:Fixed n) -> Integer
+resolution _ = pow10 n
 
+-- --------------------------------------------------------------------------
+-- The operations; the instances below are made of these
 
+public export
+addF : Fixed n -> Fixed n -> Fixed n
+addF x y = MkFixed (x.num + y.num)
 
+public export
+subF : Fixed n -> Fixed n -> Fixed n
+subF x y = MkFixed (x.num - y.num)
+
+public export
+negF : Fixed n -> Fixed n
+negF x = MkFixed (negate x.num)
+
+||| A product, rounded down.
+public export
+mulF : {n:Nat} -> Fixed n -> Fixed n -> Fixed n
+mulF x y = MkFixed ((x.num * y.num) `div` pow10 n)
+
+public export
+fromIntegerF : {n:Nat} -> Integer -> Fixed n
+fromIntegerF i = MkFixed (i * pow10 n)
 
 export
 {n:Nat} -> Num (Fixed n) where
-  x + y = MkFixed $ x.num + y.num
-  x * y = MkFixed $ (x.num * y.num) `div` pow10 n
-  fromInteger i = MkFixed $ i * pow10 n
+  (+) = addF
+  (*) = mulF
+  fromInteger = fromIntegerF
 
 export
 {n:Nat} -> Neg (Fixed n) where
-  negate x = MkFixed $ negate x.num
-  x - y = MkFixed $ x.num - y.num
+  negate = negF
+  (-) = subF
 
 export
 {n:Nat} -> Abs (Fixed n) where abs (MkFixed x) = MkFixed $ abs x
 
+||| Division rounds down (for a divisor above zero; `div` of `Integer` with a
+||| negative divisor is the backend's own), and dividing by zero stops the program
+||| (`divide` and `recipMaybe` do not).
 export
 {n:Nat} -> Fractional (Fixed n) where
   x / y = MkFixed $ (x.num * pow10 n) `div` y.num
   recip x = let
     res = pow10 n in MkFixed $ (res * res) `div` x.num
+
+export
+[additiveFixedSemigroup] {n:Nat} -> Semigroup (Fixed n) where
+  (<+>) = addF
+
+export
+[additiveFixedMonoid] {n:Nat} -> Monoid (Fixed n) using additiveFixedSemigroup where
+  neutral = MkFixed 0
 
 
 export
@@ -167,6 +202,122 @@ scale y x = MkFixed $ x.num * y
 ||| power see `Data.Pow.(^^)`.
 export pow : {n:Nat} -> Fixed n -> Nat -> Fixed n
 pow = powNum
+
+-- --------------------------------------------------------------------------
+-- Division that cannot stop the program
+
+||| `x / y`, `Nothing` when `y` is zero.
+export
+divide : {n:Nat} -> Fixed n -> Fixed n -> Maybe (Fixed n)
+divide x y = if y.num == 0 then Nothing else Just (x / y)
+
+||| The reciprocal, `Nothing` for zero.
+export
+recipMaybe : {n:Nat} -> Fixed n -> Maybe (Fixed n)
+recipMaybe x = if x.num == 0 then Nothing else Just (recip x)
+
+||| Quotient and remainder, as `div'` and `mod'` (the quotient rounded down).
+export
+divMod' : {n:Nat} -> Fixed n -> Fixed n -> (Integer, Fixed n)
+divMod' x q = (div' x q, mod' x q)
+
+-- --------------------------------------------------------------------------
+-- Whole numbers and fractions
+
+||| The greatest integer not above the number.
+export
+floor : {n:Nat} -> Fixed n -> Integer
+floor x = x.num `div` pow10 n
+
+||| The least integer not below the number.
+export
+ceil : {n:Nat} -> Fixed n -> Integer
+ceil x = negate (negate x.num `div` pow10 n)
+
+||| The integer part, towards zero.
+export
+truncate : {n:Nat} -> Fixed n -> Integer
+truncate x = if x.num < 0 then negate (negate x.num `div` pow10 n) else x.num `div` pow10 n
+
+||| The nearest integer; a number half way between two goes to the even one.
+export
+round : {n:Nat} -> Fixed n -> Integer
+round x =
+  let i = floor x
+      twice = 2 * (x.num - i * pow10 n)    -- twice the fraction, in units of 10^-n
+   in case compare twice (pow10 n) of
+        LT => i
+        GT => i + 1
+        EQ => if i `mod` 2 == 0 then i else i + 1
+
+||| The integer part (towards zero) and the fraction, which has the sign of the
+||| number and is less than one.
+export
+properFraction : {n:Nat} -> Fixed n -> (Integer, Fixed n)
+properFraction x = let i = truncate x in (i, x - fromInteger i)
+
+||| The fraction of `properFraction`.
+export
+fract : {n:Nat} -> Fixed n -> Fixed n
+fract = snd . properFraction
+
+-- --------------------------------------------------------------------------
+-- Other numbers
+
+||| The same number with another count of digits: exact for more digits, rounded
+||| down for fewer.
+export
+resize : {m, n : Nat} -> Fixed m -> Fixed n
+resize x = MkFixed ((x.num * pow10 n) `div` pow10 m)
+
+export
+{n:Nat} -> Cast Nat (Fixed n) where
+  cast i = MkFixed $ natToInteger i * pow10 n
+
+||| The nearest number (a half goes away from zero); `Nothing` for a NaN, an
+||| infinity and a number too large for a `Fixed` of this many digits (a count of
+||| digits above 300 cannot be told from a Double either).
+export
+fromDouble : {n:Nat} -> Double -> Maybe (Fixed n)
+fromDouble x =
+  if n > 300 || x /= x || x - x /= 0 then Nothing
+  else let scaled = x * cast (pow10 n)
+        in if scaled - scaled /= 0 then Nothing
+           else Just (MkFixed (cast (if scaled < 0 then scaled - 0.5 else scaled + 0.5)))
+
+||| `fromDouble`, with zero for what it refuses.
+export
+{n:Nat} -> Cast Double (Fixed n) where
+  cast x = fromMaybe (MkFixed 0) (fromDouble x)
+
+export
+{n:Nat} -> Cast (Fixed n) Double where
+  cast x = cast x.num / cast (pow10 n)
+
+||| Read `[-+]digits[.digits]` (`.5` and `5.` too, but not `.`); `Nothing` for
+||| anything else and for more digits after the point than the type has.
+export
+parseFixed : {n:Nat} -> String -> Maybe (Fixed n)
+parseFixed s =
+  case unpack s of
+    ('-' :: cs) => map negate (unsigned cs)
+    ('+' :: cs) => unsigned cs
+    cs => unsigned cs
+  where
+    digitsOf : List Char -> Maybe Integer
+    digitsOf [] = Nothing
+    digitsOf cs = if all isDigit cs then Just (foldl (\a, c => a * 10 + cast (ord c - ord '0')) 0 cs) else Nothing
+
+    unsigned : List Char -> Maybe (Fixed n)
+    unsigned cs =
+      case break (== '.') cs of
+        (whole, []) => map (\w => MkFixed (w * pow10 n)) (digitsOf whole)
+        (whole, _ :: frac) =>
+          if length frac > n || (null whole && null frac) then Nothing
+          else do
+            w <- if null whole then Just 0 else digitsOf whole
+            f <- if null frac then Just 0 else digitsOf frac
+            Just (MkFixed (w * pow10 n + f * pow10 (n `minus` length frac)))
 
 -- --------------------------------------------------------------------------
 -- vim: tw=80 sw=2 expandtab :

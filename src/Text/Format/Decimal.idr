@@ -40,6 +40,10 @@ zeroPad w = { width := Just w, pad := Just '0' }
 lpad : Nat -> Char -> String -> String
 lpad n c str = replicate (fromInteger $ cast $ cast n - strLength str) c ++ str
 
+-- exactly `n` digits of the fraction: zeros after a short one, a long one cut
+fit : Nat -> String -> String
+fit n frc = pack (take n (unpack frc ++ replicate n '0'))
+
 formatDecimal : DecimalFormat -> Maybe (Either String String) -> String -> String -> String
 formatDecimal fmt sign dec frc = let
   dec' = case (fmt.width, fmt.pad) of
@@ -48,7 +52,7 @@ formatDecimal fmt sign dec frc = let
   frc' = case fmt.prec of
               Nothing => if frc == "" then "" else (singleton fmt.point ++ frc)
               Just 0  => ""
-              Just n  => (singleton fmt.point) ++ frc ++ lpad n '0' frc
+              Just n  => (singleton fmt.point) ++ fit n frc
   str  = case sign of
               Nothing => lpad (fromMaybe 0 fmt.width) ' ' dec' ++ frc'
               Just (Left s) => lpad (fromMaybe 0 fmt.width) ' ' (s ++ dec') ++ frc'

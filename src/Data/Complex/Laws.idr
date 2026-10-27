@@ -69,38 +69,38 @@ mulSubR a b c =
 -- Addition
 
 export
-addCommutative : CommRingLaws t => (x, y : Complex t) -> addC x y === addC y x
-addCommutative x y = complexExt (addComm x.real y.real) (addComm x.imag y.imag)
+complexAddCommutative : CommRingLaws t => (x, y : Complex t) -> addC x y === addC y x
+complexAddCommutative x y = complexExt (addComm x.real y.real) (addComm x.imag y.imag)
 
 export
-addAssociative : CommRingLaws t => (x, y, z : Complex t) -> addC (addC x y) z === addC x (addC y z)
-addAssociative x y z = complexExt (addAssoc x.real y.real z.real) (addAssoc x.imag y.imag z.imag)
+complexAddAssociative : CommRingLaws t => (x, y, z : Complex t) -> addC (addC x y) z === addC x (addC y z)
+complexAddAssociative x y z = complexExt (addAssoc x.real y.real z.real) (addAssoc x.imag y.imag z.imag)
 
 export
-addZero : CommRingLaws t => (x : Complex t) -> addC x (MkComplex (fromInteger 0) (fromInteger 0)) === x
-addZero (MkComplex a b) = complexExt (Data.Ring.Laws.addZero a) (Data.Ring.Laws.addZero b)
+complexAddZero : CommRingLaws t => (x : Complex t) -> addC x (MkComplex (fromInteger 0) (fromInteger 0)) === x
+complexAddZero (MkComplex a b) = complexExt (Data.Ring.Laws.addZero a) (Data.Ring.Laws.addZero b)
 
 export
-addNegate : CommRingLaws t => (x : Complex t) -> addC x (negC x) === MkComplex (fromInteger 0) (fromInteger 0)
-addNegate x = complexExt (Data.Ring.Laws.addNeg x.real) (Data.Ring.Laws.addNeg x.imag)
+complexAddNegate : CommRingLaws t => (x : Complex t) -> addC x (negC x) === MkComplex (fromInteger 0) (fromInteger 0)
+complexAddNegate x = complexExt (Data.Ring.Laws.addNeg x.real) (Data.Ring.Laws.addNeg x.imag)
 
 export
-subIsAddNegate : CommRingLaws t => (x, y : Complex t) -> subC x y === addC x (negC y)
-subIsAddNegate x y = complexExt (subIsAddNeg x.real y.real) (subIsAddNeg x.imag y.imag)
+complexSubIsAddNegate : CommRingLaws t => (x, y : Complex t) -> subC x y === addC x (negC y)
+complexSubIsAddNegate x y = complexExt (subIsAddNeg x.real y.real) (subIsAddNeg x.imag y.imag)
 
 -- --------------------------------------------------------------------------
 -- Multiplication
 
 export
-mulCommutative : CommRingLaws t => (x, y : Complex t) -> mulC x y === mulC y x
-mulCommutative x y =
+complexMulCommutative : CommRingLaws t => (x, y : Complex t) -> mulC x y === mulC y x
+complexMulCommutative x y =
   complexExt (cong2 (-) (mulComm x.real y.real) (mulComm x.imag y.imag))
              (trans (cong2 (+) (mulComm x.real y.imag) (mulComm x.imag y.real))
                     (addComm (y.imag * x.real) (y.real * x.imag)))
 
 export
-mulOneNeutral : CommRingLaws t => (x : Complex t) -> mulC x (MkComplex (fromInteger 1) (fromInteger 0)) === x
-mulOneNeutral x =
+complexMulOneNeutral : CommRingLaws t => (x : Complex t) -> mulC x (MkComplex (fromInteger 1) (fromInteger 0)) === x
+complexMulOneNeutral x =
   complexExt (trans (cong2 (-) (Data.Ring.Laws.mulOne x.real) (mulZero x.imag))
                     (trans (subIsAddNeg x.real (fromInteger 0))
                      (trans (cong (x.real +) (negZero t))
@@ -109,16 +109,16 @@ mulOneNeutral x =
                     (addZeroL x.imag))
 
 export
-mulZeroAnnihilates : CommRingLaws t => (x : Complex t) -> mulC x (MkComplex (fromInteger 0) (fromInteger 0)) === MkComplex (fromInteger 0) (fromInteger 0)
-mulZeroAnnihilates x =
+complexMulZeroAnnihilates : CommRingLaws t => (x : Complex t) -> mulC x (MkComplex (fromInteger 0) (fromInteger 0)) === MkComplex (fromInteger 0) (fromInteger 0)
+complexMulZeroAnnihilates x =
   complexExt (trans (cong2 (-) (mulZero x.real) (mulZero x.imag))
                     (trans (subIsAddNeg (fromInteger 0) (fromInteger 0))
                            (trans (cong (fromInteger 0 +) (negZero t)) (Data.Ring.Laws.addZero (fromInteger 0)))))
              (trans (cong2 (+) (mulZero x.real) (mulZero x.imag)) (Data.Ring.Laws.addZero (fromInteger 0)))
 
 export
-mulAssociative : CommRingLaws t => (x, y, z : Complex t) -> mulC (mulC x y) z === mulC x (mulC y z)
-mulAssociative (MkComplex xr xi) (MkComplex yr yi) (MkComplex zr zi) = complexExt realPart imagPart
+complexMulAssociative : CommRingLaws t => (x, y, z : Complex t) -> mulC (mulC x y) z === mulC x (mulC y z)
+complexMulAssociative (MkComplex xr xi) (MkComplex yr yi) (MkComplex zr zi) = complexExt realPart imagPart
   where
     -- the real part: both sides are  (m1 - m2) - (m3 + m4)  and  (m1 - m3) - (m4 + m2),
     -- with m1 = xr (yr zr), m2 = xi (yi zr), m3 = xr (yi zi), m4 = xi (yr zi)
@@ -143,8 +143,8 @@ mulAssociative (MkComplex xr xi) (MkComplex yr yi) (MkComplex zr zi) = complexEx
               (sym (cong2 (+) (mulDistrib xr (yr * zi) (yi * zr)) (mulSub xi (yr * zr) (yi * zi)))))
 
 export
-mulDistributesOverAdd : CommRingLaws t => (x, y, z : Complex t) -> mulC x (addC y z) === addC (mulC x y) (mulC x z)
-mulDistributesOverAdd (MkComplex xr xi) (MkComplex yr yi) (MkComplex zr zi) = complexExt realPart imagPart
+complexMulDistributes : CommRingLaws t => (x, y, z : Complex t) -> mulC x (addC y z) === addC (mulC x y) (mulC x z)
+complexMulDistributes (MkComplex xr xi) (MkComplex yr yi) (MkComplex zr zi) = complexExt realPart imagPart
   where
     -- xr (yr + zr) - xi (yi + zi) = (xr yr - xi yi) + (xr zr - xi zi)
     realPart : xr * (yr + zr) - xi * (yi + zi) === (xr * yr - xi * yi) + (xr * zr - xi * zi)
@@ -194,11 +194,11 @@ mulConjugate (MkComplex a b) = complexExt realPart imagPart
 -- (a b) (c d) = (a c) (b d) for the multiplication of complex numbers
 mulInterchangeC : CommRingLaws t => (a, b, c, d : Complex t) -> mulC (mulC a b) (mulC c d) === mulC (mulC a c) (mulC b d)
 mulInterchangeC a b c d =
-  trans (mulAssociative a b (mulC c d))
-   (trans (cong (mulC a) (sym (mulAssociative b c d)))
-    (trans (cong (\u => mulC a (mulC u d)) (mulCommutative b c))
-     (trans (cong (mulC a) (mulAssociative c b d))
-            (sym (mulAssociative a c (mulC b d))))))
+  trans (complexMulAssociative a b (mulC c d))
+   (trans (cong (mulC a) (sym (complexMulAssociative b c d)))
+    (trans (cong (\u => mulC a (mulC u d)) (complexMulCommutative b c))
+     (trans (cong (mulC a) (complexMulAssociative c b d))
+            (sym (complexMulAssociative a c (mulC b d))))))
 
 ||| The square of the magnitude keeps products: `|x y|^2 = |x|^2 |y|^2`.
 export

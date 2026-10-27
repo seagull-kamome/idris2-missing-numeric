@@ -30,12 +30,6 @@ interface Neg t => CommRingLaws t where
 -- --------------------------------------------------------------------------
 -- Sums
 
-public export 0 Zero : (t : Type) -> Num t => t
-Zero t = fromInteger 0
-
-public export 0 One : (t : Type) -> Num t => t
-One t = fromInteger 1
-
 export
 addZeroL : CommRingLaws t => (a : t) -> fromInteger 0 + a === a
 addZeroL a = trans (addComm (fromInteger 0) a) (addZero a)

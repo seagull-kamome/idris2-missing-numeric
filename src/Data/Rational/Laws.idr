@@ -9,8 +9,9 @@
 |||   replaced by another representation of itself in any expression;
 ||| * the rationals follow the laws of a field up to it: addition and
 |||   multiplication are associative and commutative, 0 and 1 are neutral, every
-|||   number has an opposite and a non-zero one a reciprocal, and multiplication
-|||   distributes over addition.
+|||   number has an opposite, a non-zero one has a reciprocal (`recipExists`) that
+|||   is an inverse (`recipInverse`), and multiplication distributes over addition.
+|||   (That the reciprocal keeps `Equiv` is not proven.)
 |||
 ||| The proofs rest on the laws of `Integer` (`Data.Integer.Laws`), which are
 ||| stated there once, and on nothing else.
@@ -291,3 +292,21 @@ recipInverse x r prf with (integerToNat (abs x.num)) proof eq
   where
     justEq : Just a === Just b -> a === b
     justEq Refl = Refl
+
+||| A number that is not zero has a reciprocal (and `recipInverse` says that it is
+||| one).
+export
+recipExists : (x : Rational) -> Not (x.num === 0) -> (r : Rational ** recipMaybe x === Just r)
+recipExists x nz =
+  case absNatSucc x.num nz of
+    (k ** eq) => (MkRational (recipNum x.num (denom x)) (S k) ** cong (recipWith x) eq)
+
+||| Subtraction keeps Equiv.
+export
+minusRespects : {x, x', y, y' : Rational} -> Equiv x x' -> Equiv y y' -> Equiv (minusR x y) (minusR x' y')
+minusRespects {x} {x'} {y} {y'} p q =
+  equivTrans {x = minusR x y} {y = plusR x (negateR y)} {z = minusR x' y'}
+    (minusIsPlusNegate x y)
+    (equivTrans {x = plusR x (negateR y)} {y = plusR x' (negateR y')} {z = minusR x' y'}
+      (plusRespects {x} {x'} {y = negateR y} {y' = negateR y'} p (negateRespects {x = y} {x' = y'} q))
+      (equivSym {x = minusR x' y'} {y = plusR x' (negateR y')} (minusIsPlusNegate x' y')))

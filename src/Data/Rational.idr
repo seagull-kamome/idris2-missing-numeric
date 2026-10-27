@@ -88,8 +88,22 @@ export Cast Integer Rational        where cast x = MkRational x 1
 export Cast Nat Rational            where cast x = MkRational (natToInteger x) 1
 export Cast Int Rational            where cast x = MkRational (cast x) 1
 
-||| As a Double, the quotient of the two (rounded as a Double is).
-export Cast Rational Double         where cast x = cast x.num / cast (denom x)
+-- the number of decimal digits of an Integer, sign not counted
+digitCount : Integer -> Nat
+digitCount n = length (unpack (show (abs n)))
+
+||| As a Double, the quotient of the two. When either has more than 300 digits
+||| (a Double cannot hold it) both are first cut by the same power of ten, so the
+||| quotient is not a `NaN`; the result is then rounded more than once.
+export
+toDouble : Rational -> Double
+toDouble x =
+  let k = (max (digitCount x.num) (digitCount (denom x))) `minus` 300
+      p = powBy (*) 1 10 k
+   in if k == 0 then cast x.num / cast (denom x)
+      else cast (x.num `div` p) / cast (denom x `div` p)
+
+export Cast Rational Double         where cast = toDouble
 
 -- --------------------------------------------------------------------------
 -- Equality and order: of the numbers
