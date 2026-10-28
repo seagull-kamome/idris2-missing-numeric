@@ -1,13 +1,23 @@
 ||| Complex number.
 |||
-||| Copyright 2021, HATTORI, Hiroki
+||| A complex number over any `t` that has the operations needed: addition,
+||| subtraction, multiplication for a `Num t` that is a `Neg t`, division
+||| (`Fractional (Complex t)`) for a `Fractional t`. The functions that need
+||| roots, angles and exponentials (`magnitude`, `phase`, `polar`, `cexp` ...) are
+||| for `Complex Double`: Idris has no interface for them. `Data.Complex.Laws`
+||| proves that the operations follow the laws of a commutative ring whenever `t`
+||| does.
+|||
+||| Copyright 2021-2026 HATTORI, Hiroki
 ||| This file is released under the MIT license, see LICENSE for more detail.
 |||
 module Data.Complex
 
+import Data.Pow
 import Generics.Derive
 import Derive.Eq
 %language ElabReflection
+%default total
 
 -- --------------------------------------------------------------------------
 
@@ -17,10 +27,10 @@ record Complex t where
   real : t
   imag : t
 
-
+||| `real + imag i`.
 export
 Show t => Show (Complex t) where
-  showPrec d x = showParens (d >= PrefixMinus) "\{show x.imag}i + \{show x.real}"
+  showPrec d x = showParens (d >= PrefixMinus) "\{show x.real} + \{show x.imag}i"
 
 export
 Functor Complex where
@@ -28,128 +38,160 @@ Functor Complex where
 
 %runElab derive "Complex" [Generic, Meta, Derive.Eq.Eq]
 
+-- --------------------------------------------------------------------------
+-- The operations; the instances below are made of these
+
+public export
+addC : Num t => Complex t -> Complex t -> Complex t
+addC x y = MkComplex (x.real + y.real) (x.imag + y.imag)
+
+public export
+negC : Neg t => Complex t -> Complex t
+negC x = MkComplex (negate x.real) (negate x.imag)
+
+public export
+subC : Neg t => Complex t -> Complex t -> Complex t
+subC x y = MkComplex (x.real - y.real) (x.imag - y.imag)
+
+public export
+mulC : Neg t => Complex t -> Complex t -> Complex t
+mulC x y = MkComplex (x.real * y.real - x.imag * y.imag)
+                     (x.real * y.imag + x.imag * y.real)
+
+public export
+conjugate : Neg t => Complex t -> Complex t
+conjugate x = MkComplex x.real (negate x.imag)
+
+||| The square of the magnitude, `real * real + imag * imag`.
+public export
+normSq : Num t => Complex t -> t
+normSq x = x.real * x.real + x.imag * x.imag
+
 export
 (Neg t, Num t) => Num (Complex t) where
-  x + y = MkComplex (x.real + y.real) (x.imag + y.imag)
-  x * y = MkComplex (x.real * y.real - x.imag * y.imag)
-                    (x.real * y.imag + x.imag * y.real)
+  (+) = addC
+  (*) = mulC
   fromInteger x = MkComplex (fromInteger x) (fromInteger 0)
-
 
 export
 Neg t => Neg (Complex t) where
-  negate x = MkComplex (negate x.real) (negate x.imag)
-  x - y    = MkComplex (x.real - y.real) (x.imag - y.imag)
+  negate = negC
+  (-) = subC
 
+||| The reciprocal; as for a `Fractional t` it is not defined for zero.
+public export
+recipC : (Neg t, Fractional t) => Complex t -> Complex t
+recipC x = let n = normSq x in MkComplex (x.real / n) (negate x.imag / n)
+
+export
+(Neg t, Fractional t) => Fractional (Complex t) where
+  x / y = mulC x (recipC y)
+  recip = recipC
+
+export
+[additiveComplexSemigroup] (Neg t, Num t) => Semigroup (Complex t) where
+  (<+>) = addC
+
+export
+[additiveComplexMonoid] (Neg t, Num t) => Monoid (Complex t) using additiveComplexSemigroup where
+  neutral = MkComplex (fromInteger 0) (fromInteger 0)
+
+-- --------------------------------------------------------------------------
+
+||| The complex number whose imaginary part is zero.
+export
+fromReal : Num t => t -> Complex t
+fromReal r = MkComplex r (fromInteger 0)
+
+||| The imaginary unit.
+export
+imaginaryUnit : Num t => Complex t
+imaginaryUnit = MkComplex (fromInteger 0) (fromInteger 1)
 
 export
 isReal : (Num t, Eq t) => Complex t -> Bool
 isReal x = x.imag == fromInteger 0
 
+export
+isImaginary : (Num t, Eq t) => Complex t -> Bool
+isImaginary x = x.real == fromInteger 0
 
+||| Kept for the name it had.
 export
 isImage : (Num t, Eq t) => Complex t -> Bool
-isImage x = x.real == fromInteger 0
-
-
+isImage = isImaginary
 
 -- --------------------------------------------------------------------------
+-- Powers
 
+||| `x` to a power by squaring.
 export
-plus_commutative : (Num t, Neg t)
-    => {comm_t: {a,b:t} -> (a + b) = (b + a)}
-    -> {x, y:Complex t}
-    -> (x + y) = (y + x)
-plus_commutative = rewrite (comm_t {a=x.real} {b=y.real})
-                in rewrite (comm_t {a=x.imag} {b=y.imag})
-                in Refl
-
-export
-plus_associative : (Num t, Neg t)
-    => {assoc_t: {a,b,c:t} -> (a + b) + c = a + (b + c)}
-    -> {x, y, z:Complex t}
-    -> (x + y) + z = x + (y + z)
-plus_associative = rewrite (assoc_t {a=x.real} {b=y.real} {c=z.real})
-                in rewrite (assoc_t {a=x.imag} {b=y.imag} {c=z.imag})
-                in Refl
-
-export
-mult_commutative : (Num t, Neg t)
-    => {mult_comm_t: {a,b:t} -> a * b = b * a}
-    -> {plus_comm_t: {a,b:t} -> a + b = b + a}
-    -> {x, y:Complex t}
-    -> (x * y) = (y * x)
-mult_commutative = rewrite (mult_comm_t {a=x.real} {b=y.real})
-                in rewrite (mult_comm_t {a=x.imag} {b=y.imag})
-                in rewrite (mult_comm_t {a=x.real} {b=y.imag})
-                in rewrite (mult_comm_t {a=x.imag} {b=y.real})
-                in rewrite (plus_comm_t {a=(y.imag * x.real)} {b=(y.real * x.imag)})
-                in Refl
-
-
-export
-mult_associative : (Num t, Neg t)
-    => {mult_assoc_t: {a,b,c:t} -> (a * b) * c = a * (b * c)}
-    -> {plus_assoc_t: {a,b,c:t} -> (a + b) + c = a + (b + c)}
-    -> {minus_assoc_t: {a,b,c:t} -> (a - b) - c = a - (b + c)}
-    -> {plus_dist_t: {a,b,c:t} -> a * (b + c) = a * b + a * c}
-    -> {minus_dist_t: {a,b,c:t} -> a * (b - c) = a * b - a * c}
-    -> {plus_comm_t: {a,b:t} -> a + b = b + a}
-    -> {x, y, z:Complex t}
-    -> (x * y) * z = x * (y * z)
-mult_associative = 
-  rewrite (prf2 {xr=x.real, xi=x.imag, yr=y.real, yi=y.imag, zr=z.real, zi=z.imag})
-    in rewrite prf1 in Refl
-  where
-    prf1 : ((x.real * ((y.real * z.imag) + (y.imag * z.real))) + (x.imag * ((y.real * z.real) - (y.imag * z.imag))))
-             = ((((x.real * y.real) - (x.imag * y.imag)) * z.imag) + (((x.real * y.imag) + (x.imag * y.real)) * z.real))
-    prf1 = ?pr1_rhs
-
-    prf2 : {xr, xi, yr, yi, zr, zi : t}
-        -> ((xr * ((yr * zr) - (yi * zi))) - (xi * ((yr * zi) + (yi * zr))))
-           = ((((xr * yr) - (xi * yi)) * zr) - (((xr * yi) + (xi * yr)) * zi))
-    prf2 = rewrite (minus_dist_t {a=xr, b=yr * zr, c=yi * zi})
-            in rewrite (plus_dist_t {a=xi, b=yr * zi, c=yi * zr})
-            in rewrite (q {a=xr * (yr * zr), b=xr * (yi * zi),
-                           c=xi * (yr * zi), d=xi * (yi * zr) })
-            in ?prf2_rhs
-      where
-        q : {a, b, c, d:t} -> (a - b) - (c + d) = (a - d) - (b + c)
-        q = ?q
-
-
-
-
-
-export
-distributive : (Num t, Neg t)
-    => {x, y:Complex t}
-    -> {dist_t: {a,b,c:t} -> a * (b + c) = a * b + a * c}
-    -> {plus_commu_t: {a,b:t} -> a + b = b + a}
-    -> x * (y + z) = x * y + x * z
-distributive = rewrite (dist_t {a=x.real} {b=y.real} {c=z.real})
-            in rewrite (dist_t {a=x.imag} {b=y.imag} {c=z.imag})
-            in rewrite (dist_t {a=x.real} {b=y.imag} {c=z.imag})
-            in rewrite (dist_t {a=x.imag} {b=y.real} {c=z.real})
-            in ?lhs_distributive
-
-
+pow : (Neg t, Num t) => Complex t -> Nat -> Complex t
+pow = powBy mulC (fromReal (fromInteger 1))
 
 -- --------------------------------------------------------------------------
+-- Magnitude, angle and what depends on them (Double)
 
+-- The angle of the point (x, y), in (-pi, pi].
+atan2 : Double -> Double -> Double
+atan2 y x =
+  if x > 0 then atan (y / x)
+  else if x < 0 then (if y >= 0 then atan (y / x) + pi else atan (y / x) - pi)
+  else if y > 0 then pi / 2
+  else if y < 0 then negate pi / 2
+  else 0
+
+||| The distance from zero. The parts are scaled by the larger first, so a number
+||| with a large part does not overflow (`normSq` would).
 export
-conjugate : Neg t => Complex t -> Complex t
-conjugate x = MkComplex x.real (negate x.imag)
+magnitude : Complex Double -> Double
+magnitude x =
+  let m = max (abs x.real) (abs x.imag)
+   in if m == 0 || m - m /= 0 then m
+      else m * sqrt ((x.real / m) * (x.real / m) + (x.imag / m) * (x.imag / m))
 
-
+||| The angle with the real axis, in (-pi, pi]; zero for zero. A negative zero
+||| imaginary part is taken as a positive one, so the branch cut is on its
+||| upper side (`phase (-1 - 0i)` is `pi`).
 export
-conjugate_distributive : (Num t, Neg t)
-    => {x, y: Complex t}
-    -> {pr: {a,b:t} -> negate (a + b) = negate a + negate b}
-    -> conjugate (x + y) = conjugate x + conjugate y
-conjugate_distributive = rewrite (pr {a =x.imag} {b=y.imag}) in Refl
+phase : Complex Double -> Double
+phase x = atan2 x.imag x.real
 
+||| The magnitude and the angle.
+export
+polar : Complex Double -> (Double, Double)
+polar x = (magnitude x, phase x)
 
+||| The number with a magnitude and an angle.
+export
+mkPolar : (r, theta : Double) -> Complex Double
+mkPolar r theta = MkComplex (r * cos theta) (r * sin theta)
+
+||| `cos theta + i sin theta`.
+export
+cis : Double -> Complex Double
+cis = mkPolar 1
+
+||| `e` to the power `x`.
+export
+cexp : Complex Double -> Complex Double
+cexp x = mkPolar (exp x.real) x.imag
+
+||| The principal natural logarithm, with the angle in (-pi, pi]. Not defined for
+||| zero (`-infinity` for the real part).
+export
+clog : Complex Double -> Complex Double
+clog x = MkComplex (log (magnitude x)) (phase x)
+
+||| The principal square root, the one with a real part that is not negative.
+export
+csqrt : Complex Double -> Complex Double
+csqrt x = mkPolar (sqrt (magnitude x)) (phase x / 2)
+
+||| `x` to the power `y` (`exp (y * log x)`; zero to a power is `NaN`).
+export
+cpow : Complex Double -> Complex Double -> Complex Double
+cpow x y = cexp (mulC y (clog x))
 
 -- --------------------------------------------------------------------------
 -- vim: tw=80 sw=2 expandtab :

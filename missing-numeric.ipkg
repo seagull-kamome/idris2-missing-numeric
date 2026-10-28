@@ -13,9 +13,15 @@ depends   = base
           , elab-util >= 0.6.0
           , sop >= 0.6.0
 
-modules = Data.Rational
+modules = Data.Pow
+        , Data.Ring.Laws
+        , Data.Integer.Laws
+        , Data.Rational
+        , Data.Rational.Laws
         , Data.Fixed
+        , Data.Fixed.Laws
         , Data.Complex
+        , Data.Complex.Laws
         , Text.Format.Decimal
         , Text.Format.Digits
 
