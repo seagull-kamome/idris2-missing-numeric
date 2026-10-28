@@ -8,6 +8,7 @@ module Text.Format.Digits
 import Data.Nat
 import Data.Fin
 import Data.Primitives.Views
+import Data.So
 import Data.String
 
 %default total
@@ -75,8 +76,14 @@ intToDigits {base=base} digits n =
     go d 0 xs = xs
     go d n xs with (n `divides` d)
       go d (_ * dv + r) xs | DivBy dv r prf =
-        let prf' : So ((cast r) < base) = ?go_prf_rhs
-         in go d (assert_smaller n dv) (toDigit {prfNumLEBase=prf'} digits (cast r) :: xs)
+        -- `toDigit` wants a proof that the remainder is below the base. It is not
+        -- the `d` of this function that is the base, and a remainder of an `Int` is
+        -- not a `Nat` for the type checker (these are primitive operations), so the
+        -- proof is made by the test itself.
+        case choose (the Nat (cast r) < base) of
+          Left prf' => go d (assert_smaller n dv) (toDigit {prfNumLEBase=prf'} digits (cast r) :: xs)
+          -- the remainder is below the divisor, which is the base: not reached
+          Right _ => xs
       -- `base = 0`: `Digits 0` has no digit characters to index into
       -- anyway, so nothing more can be rendered -- stop here rather
       -- than claim a digit that doesn't exist.

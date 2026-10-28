@@ -9,6 +9,7 @@ import Data.Pow
 import Data.Complex
 import Data.Rational
 import Text.Format.Decimal
+import Text.Format.Digits
 import System
 import System.Info
 import Data.IORef
@@ -41,7 +42,7 @@ partial main : IO ()
 main = do
   putStrLn $ "Codegen : \{System.Info.codegen}"
   fails <- newIORef 0
-  testTextFormat fails >> testComplex fails >> testFixed fails >> testRational fails
+  testTextFormat fails >> testDigits fails >> testComplex fails >> testFixed fails >> testRational fails
   n <- readIORef fails
   if n == 0 then putStrLn "all passed" else putStrLn (show n ++ " failed") >> exitFailure
   where
@@ -111,6 +112,32 @@ main = do
             [("   0.000000000000", the (Fixed 12) 0),
              ("   1.000000000000", 1), (" -10.000000000000", -10) ]
             (format fmt00) (const (==))
+
+    testDigits : Failures -> IO ()
+    testDigits fails = do
+      -- the base is given twice: `Digits base` is a String, which does not tell it
+      let hex = intToDigits {base=16} lowerHexdigits
+          unhex = digitsToInt {base=16} lowerHexdigits
+      chk fails "Digits, intToDigits"
+          [ ("3e7", hex 999), ("3E7", intToDigits {base=16} upperHexdigits 999)
+          , ("13", intToDigits {base=8} (upperAlnumDigits {base=8}) 11), ("0", hex 0)
+          , ("-ff", hex (-255)), ("101", intToDigits {base=2} (lowerAlnumDigits {base=2}) 5)
+          , ("z", intToDigits {base=36} (lowerAlnumDigits {base=36}) 35), ("10", intToDigits {base=36} (lowerAlnumDigits {base=36}) 36)
+          , ("1", intToDigits {base=2} (lowerAlnumDigits {base=2}) 1)
+          , ("9223372036854775807", intToDigits {base=10} (lowerAlnumDigits {base=10}) 9223372036854775807) ]
+          id (const (==))
+      chk fails "Digits, digitsToInt"
+          [ (Just 999, unhex "3e7"), (Just (-255), unhex "-ff")
+          , (Just 26, digitsToInt {base=16} upperHexdigits "1A"), (Nothing, unhex "g")
+          , (Nothing, unhex ""), (Just 0, unhex "0") ]
+          id (const (==))
+      let b7 = lowerAlnumDigits {base=7}
+          b36 = lowerAlnumDigits {base=36}
+      chk fails "Digits, the two agree"
+          [ (True, all (\n => unhex (hex n) == Just n) [-300 .. 300])
+          , (True, all (\n => digitsToInt {base=7} b7 (intToDigits {base=7} b7 n) == Just n) [-300 .. 300])
+          , (True, all (\n => digitsToInt {base=36} b36 (intToDigits {base=36} b36 n) == Just n) [-5000, -1234, 99999, 1234567890]) ]
+          id (const (==))
 
     testComplex : Failures -> IO ()
     testComplex fails = do
