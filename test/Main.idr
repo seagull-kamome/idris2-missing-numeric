@@ -115,6 +115,8 @@ main = do
 
     testDigits : Failures -> IO ()
     testDigits fails = do
+      -- the largest Int the backend has: the JavaScript ones are 32 bits, the others 64
+      let largest = if codegen == "node" || codegen == "javascript" then "2147483647" else "9223372036854775807"
       -- the base is given twice: `Digits base` is a String, which does not tell it
       let hex = intToDigits {base=16} lowerHexdigits
           unhex = digitsToInt {base=16} lowerHexdigits
@@ -124,7 +126,7 @@ main = do
           , ("-ff", hex (-255)), ("101", intToDigits {base=2} (lowerAlnumDigits {base=2}) 5)
           , ("z", intToDigits {base=36} (lowerAlnumDigits {base=36}) 35), ("10", intToDigits {base=36} (lowerAlnumDigits {base=36}) 36)
           , ("1", intToDigits {base=2} (lowerAlnumDigits {base=2}) 1)
-          , ("9223372036854775807", intToDigits {base=10} (lowerAlnumDigits {base=10}) 9223372036854775807) ]
+          , (largest, intToDigits {base=10} (lowerAlnumDigits {base=10}) (cast largest)) ]
           id (const (==))
       chk fails "Digits, digitsToInt"
           [ (Just 999, unhex "3e7"), (Just (-255), unhex "-ff")
